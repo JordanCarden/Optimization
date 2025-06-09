@@ -56,8 +56,10 @@ def run_genetic_optimization(base_params,
             x, base_params, model_params, experimental_data, variant
         ),
         bounds=bounds,
-        popsize=200,
+        popsize=15,
         maxiter=200,
+        mutation=0.5,
+        recombination=0.7,
         tol=1e-7,
         disp=True
     )
