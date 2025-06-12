@@ -1,105 +1,160 @@
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.io import loadmat
-
-# Assuming simulate.py, protein_model.py are in the same directory
-# or accessible in the Python path.
-# COLOR_MAP is imported from simulate.py as it's a shared resource.
 from simulate import (
     simulate_variant_response,
     VARIANTS,
     COLOR_MAP,
-    SIM_DURATION_S,
     SIM_STEP_S,
-    SAMPLE_STEP
+    SAMPLE_STEP,
 )
 
-def visualize_synthetic_data_standalone(true_params_list):
+
+def parse_args():
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed arguments.
     """
-    Generates and visualizes synthetic data using the provided true parameters,
-    and plots it against the experimental data.
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--noise-type',
+                        choices=['gaussian', 'composite'],
+                        default='composite')
+    parser.add_argument('--noise-std', type=float, default=25.0)
+    parser.add_argument('--a', type=float, default=25.0)
+    parser.add_argument('--b', type=float, default=1.0)
+    parser.add_argument('--rho', type=float, default=0.7)
+    parser.add_argument('--sigma-delta', type=float, default=0.05)
+    parser.add_argument('--drift-slope', type=float, default=0.01)
+    parser.add_argument('--num-samples', type=int, default=10)
+    return parser.parse_args()
+
+
+def apply_gaussian_noise(trace, noise_std):
+    """Add zero-mean Gaussian noise to a time-series.
 
     Args:
-        true_params_list: list, the 21 "true" parameters for the model.
+        trace (np.ndarray): Clean simulation output.
+        noise_std (float): Standard deviation of noise.
+
+    Returns:
+        np.ndarray: Noisy trace.
+    """
+    return trace + np.random.normal(scale=noise_std, size=trace.shape)
+
+
+def apply_composite_noise(trace, time, a, b, rho,
+                          sigma_delta, drift_slope):
+    """Apply composite noise model to a simulated trace.
+
+    Args:
+        trace (np.ndarray): Clean simulation output.
+        time (np.ndarray): Time axis in minutes.
+        a (float): Baseline noise variance.
+        b (float): Scale factor for variance.
+        rho (float): AR(1) correlation coefficient.
+        sigma_delta (float): Multiplicative noise scale.
+        drift_slope (float): Linear drift per minute.
+
+    Returns:
+        np.ndarray: Synthetic trace with noise.
+    """
+    length = trace.size
+    noise = np.zeros(length)
+    for t in range(length):
+        mu = trace[t]
+        var = a + b * mu
+        eta = np.random.normal(scale=np.sqrt(var))
+        eps = eta if t == 0 else rho * noise[t - 1] + eta
+        delta = np.random.normal(scale=sigma_delta)
+        drift = drift_slope * time[t]
+        noise[t] = delta * mu + eps + drift
+    return trace + noise
+
+
+def visualize_aav_with_experiments(true_params_list, a, b, rho,
+                                  sigma_delta, drift_slope,
+                                  num_samples, noise_type,
+                                  noise_std):
+    """Plot noisy synthetic AAV data and experiments for all variants.
+
+    Args:
+        true_params_list (Sequence[float]): Parameter vector.
+        a (float): Baseline noise variance.
+        b (float): Scale factor for variance.
+        rho (float): AR(1) coefficient.
+        sigma_delta (float): Multiplicative noise scale.
+        drift_slope (float): Linear drift per minute.
+        num_samples (int): Synthetic sample count.
+        noise_type (str): 'gaussian' or 'composite'.
+        noise_std (float): Std dev for Gaussian noise.
     """
     true_params = np.array(true_params_list)
-
-    # These model_params are standard for your simulations
+    mat = loadmat('matlab/experimental_data.mat')
     model_params = {
         'P_x': 1e-9,
         'P_y': 1e-9,
         'P_z': 1e-9,
-        'IPTG': 0.1e-3
+        'IPTG': 0.1e-3,
     }
-
-    # Load experimental data
-    mat_data = loadmat('matlab/experimental_data.mat')
-    experimental_data = {
-        var: mat_data[var].flatten() for var in VARIANTS
-    }
-
-    synthetic_gfp_all_variants = {}
-
-    print("Generating synthetic data for visualization...")
+    clean0 = simulate_variant_response(true_params, model_params, 'AAV')
+    length = clean0.size
+    time = np.arange(length) * SIM_STEP_S * SAMPLE_STEP / 60
+    plt.figure()
     for variant in VARIANTS:
-        print(f"Simulating: {variant}")
-        simulated_gfp = simulate_variant_response(
-            true_params,
-            model_params,
-            variant
-        )
-        synthetic_gfp_all_variants[variant] = simulated_gfp
-        print(f"Finished: {variant}")
-
-    # Create a time column for plotting
-    # Number of time points:
-    num_points = int((SIM_DURATION_S / SIM_STEP_S) / SAMPLE_STEP) + 1
-    # Time interval in minutes:
-    time_interval_min = (SIM_STEP_S * SAMPLE_STEP) / 60
-    time_points = np.arange(num_points) * time_interval_min
-
-    # Plotting directly using matplotlib.pyplot
-    plt.figure(figsize=(10, 6))
-    for variant_name in VARIANTS:
-        # Plot synthetic data
-        if variant_name in synthetic_gfp_all_variants:
-            plt.plot(
-                time_points,
-                synthetic_gfp_all_variants[variant_name],
-                linestyle='-',
-                color=COLOR_MAP.get(variant_name, 'gray'),
-                label=f'{variant_name} Synthetic'
-            )
-        # Plot experimental data
-        if variant_name in experimental_data:
-            plt.plot(
-                time_points,
-                experimental_data[variant_name],
-                marker='o',
-                linestyle='None',
-                color=COLOR_MAP.get(variant_name, 'gray'),
-                label=f'{variant_name} Experimental'
-            )
-
+        exp_trace = mat[variant].ravel()
+        color = COLOR_MAP.get(variant, 'gray')
+        plt.plot(time,
+                 exp_trace,
+                 marker='o',
+                 linestyle='None',
+                 label=f'{variant} experimental',
+                 color=color)
+    for i in range(num_samples):
+        if noise_type == 'gaussian':
+            noisy = apply_gaussian_noise(clean0, noise_std)
+        else:
+            noisy = apply_composite_noise(clean0,
+                                          time,
+                                          a,
+                                          b,
+                                          rho,
+                                          sigma_delta,
+                                          drift_slope)
+        plt.plot(time, noisy, label=f'{noise_type} synthetic {i+1}')
     plt.xlabel('Time (min)')
-    plt.ylabel('Simulated and Experimental GFP Concentration (nM)')
-    plt.title('Synthetic vs. Experimental GFP Response for All Variants')
+    plt.ylabel('GFP (AU)')
+    plt.title('AAV Synthetic with Noise and Experiments')
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    print("\nDisplaying plot...")
     plt.show()
 
 
-if __name__ == '__main__':
-    # The "true" parameters you provided
-    user_true_parameters = [
-        4.70940318e+00, 4.82725805e-01, 1.01149449e+01, 8.45102567e+00,
-        3.73637489e+01, 2.16021069e-01, 3.05100532e-01, 3.76967367e-02,
-        1.29482278e-01, 4.27994896e-01, 5.60767076e-01, 1.03341863e+04,
-        2.63288502e-04, 5.75797013e+03, 8.35920780e+03, 1.01590610e+04,
+def main():
+    """Parse arguments and run the visualization."""
+    args = parse_args()
+    user_true_params = [
+        4.70940318e00, 4.82725805e-01, 1.01149449e01, 8.45102567e00,
+        3.73637489e01, 2.16021069e-01, 3.05100532e-01, 3.76967367e-02,
+        1.29482278e-01, 4.27994896e-01, 5.60767076e-01, 1.03341863e04,
+        2.63288502e-04, 5.75797013e03, 8.35920780e03, 1.01590610e04,
         1.19814795e-02, 7.83780130e-03, 3.61074026e-01, 1.60724775e-04,
-        2.93045286e+03
+        2.93045286e03,
     ]
+    visualize_aav_with_experiments(
+        user_true_params,
+        args.a,
+        args.b,
+        args.rho,
+        args.sigma_delta,
+        args.drift_slope,
+        args.num_samples,
+        args.noise_type,
+        args.noise_std,
+    )
 
-    visualize_synthetic_data_standalone(user_true_parameters)
+
+if __name__ == '__main__':
+    main()
