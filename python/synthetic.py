@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument('--a', type=float, default=25.0)
     parser.add_argument('--b', type=float, default=1.0)
     parser.add_argument('--rho', type=float, default=0.007)
-    parser.add_argument('--sigma-delta', type=float, default=0.025)
+    parser.add_argument('--sigma-delta', type=float, default=0.05)
     parser.add_argument('--drift-slope', type=float, default=0.01)
     parser.add_argument('--num-samples', type=int, default=10)
     return parser.parse_args()
