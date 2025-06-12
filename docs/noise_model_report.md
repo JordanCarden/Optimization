@@ -1,6 +1,7 @@
 # Composite Noise Model Report for Synthetic GFP Data
 
 ## 1. Noise Generation Method
+
 Each synthetic measurement `y_t` is generated from the clean ODE output `x_t` by applying four noise components:
 
 ```text
@@ -29,6 +30,7 @@ y_t = (1 + δ_t)·x_t + ε_t + drift_t
   - Simulates slow changes in baseline over long runs (temperature shifts, lamp warm‑up)
 
 ## 3. Advantages over Simple Gaussian Noise
+
 A simple model uses
 
 ```text
@@ -46,15 +48,16 @@ These features align with real fluorescence measurements.
 
 ## 4. Parameter Selection and Justification
 
-| Parameter            | Value                | Justification                                                                                          |
-|----------------------|----------------------|--------------------------------------------------------------------------------------------------------|
-| **a**                | 25                   | Baseline variance: SD≈5 AU; matches blank-well noise in plate readers ([cloudynights.com](https://www.cloudynights.com), [teledynevisionsolutions.com](https://www.teledynevisionsolutions.com)).            |
-| **b**                | 1.0                  | Shot noise: Poisson variance ≈ mean photon count; Fano factor≈1 ([Wikipedia](https://en.wikipedia.org/wiki/Shot_noise)).                                 |
-| **σ_δ** (`sigma-delta`)| 0.05 (5 %)          | Percent errors: pipetting and lamp fluctuations ~1–5 % CV ([capp.dk](https://capp.dk), [integra-biosciences.com](https://www.integra-biosciences.com)).      |
-| **ρ** (`rho`)        | 0.7                  | AR(1) correlation from low-pass filtering (τ≈2 min, Δt=1 min → ρ≈e^(–Δt/τ)≈0.6) ([Control Systems Academy](https://controlsystemsacademy.com), [Wikipedia](https://en.wikipedia.org/wiki/Low-pass_filter)).  |
-| **drift_slope**      | 0.01 AU/min (~0.6 AU/hr) | Baseline drift: ~0.6 AU per hour; consistent with long-term drift specs in fluorescence detectors ([support.waters.com](https://support.waters.com)).      |
+| Parameter               | Value                    | Justification                                                                                                                                                                                                  |
+| ----------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **a**                   | 25                       | Baseline variance: SD≈5 AU; matches blank-well noise in plate readers ([cloudynights.com](https://www.cloudynights.com), [teledynevisionsolutions.com](https://www.teledynevisionsolutions.com)).              |
+| **b**                   | 1.0                      | Shot noise: Poisson variance ≈ mean photon count; Fano factor≈1 ([Wikipedia](https://en.wikipedia.org/wiki/Shot_noise)).                                                                                       |
+| **σ_δ** (`sigma-delta`) | 0.05 (5 %)               | Percent errors: pipetting and lamp fluctuations ~1–5 % CV ([capp.dk](https://capp.dk), [integra-biosciences.com](https://www.integra-biosciences.com)).                                                        |
+| **ρ** (`rho`)           | 0.007                    | AR(1) correlation from low-pass filtering (τ≈2 min, Δt=10 min → ρ≈e^(–Δt/τ)≈0.007) ([Control Systems Academy](https://controlsystemsacademy.com), [Wikipedia](https://en.wikipedia.org/wiki/Low-pass_filter)). |
+| **drift_slope**         | 0.01 AU/min (~0.6 AU/hr) | Baseline drift: ~0.6 AU per hour; consistent with long-term drift specs in fluorescence detectors ([support.waters.com](https://support.waters.com)).                                                          |
 
 ## References
+
 1. CloudyNights discussion of read noise: https://www.cloudynights.com
 2. Teledyne Vision Solutions camera noise guide: https://www.teledynevisionsolutions.com
 3. Wikipedia on shot noise: https://en.wikipedia.org/wiki/Shot_noise
@@ -65,5 +68,5 @@ These features align with real fluorescence measurements.
 8. Waters support note on detector drift: https://support.waters.com
 
 ---
-*This report presents a noise model suitable for publication. Adjust any URLs or citations as needed.*
 
+_This report presents a noise model suitable for publication. Adjust any URLs or citations as needed._

@@ -24,8 +24,8 @@ def parse_args():
     parser.add_argument('--noise-std', type=float, default=25.0)
     parser.add_argument('--a', type=float, default=25.0)
     parser.add_argument('--b', type=float, default=1.0)
-    parser.add_argument('--rho', type=float, default=0.7)
-    parser.add_argument('--sigma-delta', type=float, default=0.05)
+    parser.add_argument('--rho', type=float, default=0.007)
+    parser.add_argument('--sigma-delta', type=float, default=0.025)
     parser.add_argument('--drift-slope', type=float, default=0.01)
     parser.add_argument('--num-samples', type=int, default=10)
     return parser.parse_args()
@@ -61,16 +61,18 @@ def apply_composite_noise(trace, time, a, b, rho,
         np.ndarray: Synthetic trace with noise.
     """
     length = trace.size
-    noise = np.zeros(length)
+    e_autocorr = np.zeros(length)
+    noisy = np.zeros(length)
     for t in range(length):
-        mu = trace[t]
-        var = a + b * mu
-        eta = np.random.normal(scale=np.sqrt(var))
-        eps = eta if t == 0 else rho * noise[t - 1] + eta
+        var = a + b * trace[t]
+        eta = np.random.normal(scale=np.sqrt(max(0, var)))
+        e_autocorr[t] = (
+            eta if t == 0 else rho * e_autocorr[t - 1] + eta
+        )
         delta = np.random.normal(scale=sigma_delta)
         drift = drift_slope * time[t]
-        noise[t] = delta * mu + eps + drift
-    return trace + noise
+        noisy[t] = trace[t] * (1 + delta) + e_autocorr[t] + drift
+    return noisy
 
 
 def visualize_aav_with_experiments(true_params_list, a, b, rho,
