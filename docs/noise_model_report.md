@@ -48,13 +48,13 @@ These features align with real fluorescence measurements.
 
 ## 4. Parameter Selection and Justification
 
-| Parameter               | Value                    | Justification                                                                                                                                                                                                  |
-| ----------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **a**                   | 25                       | Baseline variance: SD≈5 AU; matches blank-well noise in plate readers ([cloudynights.com](https://www.cloudynights.com), [teledynevisionsolutions.com](https://www.teledynevisionsolutions.com)).              |
-| **b**                   | 1.0                      | Shot noise: Poisson variance ≈ mean photon count; Fano factor≈1 ([Wikipedia](https://en.wikipedia.org/wiki/Shot_noise)).                                                                                       |
-| **σ_δ** (`sigma-delta`) | 0.05 (5 %)               | Percent errors: pipetting and lamp fluctuations ~1–5 % CV ([capp.dk](https://capp.dk), [integra-biosciences.com](https://www.integra-biosciences.com)).                                                        |
-| **ρ** (`rho`)           | 0.007                    | AR(1) correlation from low-pass filtering (τ≈2 min, Δt=10 min → ρ≈e^(–Δt/τ)≈0.007) ([Control Systems Academy](https://controlsystemsacademy.com), [Wikipedia](https://en.wikipedia.org/wiki/Low-pass_filter)). |
-| **drift_slope**         | 0.01 AU/min (~0.6 AU/hr) | Baseline drift: ~0.6 AU per hour; consistent with long-term drift specs in fluorescence detectors ([support.waters.com](https://support.waters.com)).                                                          |
+| Parameter               | Value                    | Justification                                                                                                                                                                                                                               |
+| ----------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **a**                   | 25                       | Baseline variance: SD≈5 AU; matches blank-well noise in plate readers ([cloudynights.com](https://www.cloudynights.com), [teledynevisionsolutions.com](https://www.teledynevisionsolutions.com)).                                           |
+| **b**                   | 1.0                      | Shot noise: Poisson variance ≈ mean photon count; Fano factor≈1 ([Wikipedia](https://en.wikipedia.org/wiki/Shot_noise)).                                                                                                                    |
+| **σ_δ** (`sigma-delta`) | 0.1 (10 %)               | Percent errors: pipetting and lamp fluctuations ~1–5 % CV ([capp.dk](https://capp.dk), [integra-biosciences.com](https://www.integra-biosciences.com)). Changed to 10% based on Dr. Tang's reccomendation to account for additional errors. |
+| **ρ** (`rho`)           | 0.007                    | AR(1) correlation from low-pass filtering (τ≈2 min, Δt=10 min → ρ≈e^(–Δt/τ)≈0.007) ([Control Systems Academy](https://controlsystemsacademy.com), [Wikipedia](https://en.wikipedia.org/wiki/Low-pass_filter)).                              |
+| **drift_slope**         | 0.01 AU/min (~0.6 AU/hr) | Baseline drift: ~0.6 AU per hour; consistent with long-term drift specs in fluorescence detectors ([support.waters.com](https://support.waters.com)).                                                                                       |
 
 ## References
 
