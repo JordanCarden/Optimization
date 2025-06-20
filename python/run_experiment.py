@@ -49,21 +49,16 @@ def main():
     }
     base_params = loadmat('matlab/initial_params.mat')['p'].flatten()
 
-    # Define which parameter indices to optimize
     opt_param_indices = list(range(len(base_params)))
 
-    # Define bounds for the optimization
-    # Generic bounds; refine based on parameter knowledge
     bounds = [
         (p * 0.1, p * 10) if p > 0 else (-1e-6, 1e-6)
         for p in base_params
     ]
-    # Ensure lower bound is not greater than upper bound
     for i, (low, high) in enumerate(bounds):
         if low > high:
             bounds[i] = (high, low)
 
-    # Set random seed for reproducibility
     np.random.seed(args.seed)
 
     if args.method == 'bo':
