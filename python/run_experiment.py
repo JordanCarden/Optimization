@@ -1,8 +1,5 @@
-# python/run_experiment.py
-
 import argparse
 from scipy.io import loadmat
-import numpy as np
 
 import optimizers
 from simulate import simulate_variant_response, VARIANTS
@@ -22,8 +19,8 @@ def parse_args():
     )
     parser.add_argument(
         'method',
-        choices=['cma', 'lshade', 'bayes', 'saea', 'pso'],
-        default='cma',
+        choices=['de', 'anneal'],
+        default='de',
         help='Optimization method.'
     )
     return parser.parse_args()
@@ -43,33 +40,32 @@ def main():
         'P_z': 1e-9,
         'IPTG': 0.1e-3
     }
-
     base_params = loadmat('matlab/initial_params.mat')['p'].flatten()
 
     optimizers.OPT_PARAM_INDICES = list(range(len(base_params)))
-    
 
-    optimizer_map = {
-        'cma': ('CMA-ES', optimizers.run_cma_es),
-        'lshade': ('L-SHADE', optimizers.run_lshade),
-        'bayes': ('Bayesian Optimization', optimizers.run_bayesian_optimization),
-        'saea': ('Surrogate-Assisted EA', optimizers.run_saea),
-        'pso': ('Particle Swarm Opt (PSO)', optimizers.run_pso)
-    }
-
-    if args.method in optimizer_map:
-        algorithm_name, optimizer_func = optimizer_map[args.method]
-        optimized_params = optimizer_func(
+    if args.method == 'anneal':
+        algorithm_name = 'Simulated Annealing'
+        optimized_params = optimizers.run_simulated_annealing(
+            base_params,
+            model_params,
+            experimental_data,
+            args.variant,
+            n_iterations=1000,
+            initial_temp=1.0,
+            cooling_rate=0.995
+        )
+    else:
+        algorithm_name = 'Genetic Optimization'
+        optimized_params = optimizers.run_genetic_optimization(
             base_params,
             model_params,
             experimental_data,
             args.variant
         )
-    else:
-        raise ValueError(f"Unknown optimization method: {args.method}")
 
 
-    print(f"\nOptimized parameters from {algorithm_name}:\n{optimized_params}")
+    print(optimized_params)
 
     simulated = simulate_variant_response(
         optimized_params,
