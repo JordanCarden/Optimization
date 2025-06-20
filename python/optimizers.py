@@ -84,10 +84,10 @@ def run_cma_es(base_params, model_params, experimental_data,
     Returns:
         np.ndarray: Full parameter vector with optimized values.
     """
-    lower = [b[0] for b in bounds]
-    upper = [b[1] for b in bounds]
-    x0 = np.array([(l + u) / 2 for l, u in bounds])
-    sigma0 = 0.25 * np.mean([u - l for l, u in bounds])
+    lower_bounds = [b[0] for b in bounds]
+    upper_bounds = [b[1] for b in bounds]
+    x0 = np.array([(lb + ub) / 2 for lb, ub in bounds])
+    sigma0 = 0.25 * np.mean([ub - lb for lb, ub in bounds])
     popsize = 4 + int(3 * np.log(len(bounds)))
     counter = {'count': 0}
 
@@ -99,7 +99,7 @@ def run_cma_es(base_params, model_params, experimental_data,
         )
 
     options = {
-        'bounds': [lower, upper],
+        'bounds': [lower_bounds, upper_bounds],
         'maxfevals': 5000,
         'popsize': popsize,
         'seed': random_seed,

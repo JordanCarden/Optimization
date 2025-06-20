@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 from simulate import VARIANTS, COLOR_MAP
 
 
-def plot_results(simulated,
-                 experimental_data,
-                 variant,
-                 algorithm):
+def plot_results(
+        simulated,
+        experimental_data,
+        variant,
+        algorithm_name):
     """Plot experimental data for all variants and simulated for chosen.
 
     Args:
@@ -37,5 +38,5 @@ def plot_results(simulated,
     plt.xlabel('Time points (10 min intervals)')
     plt.ylabel('GFP')
     plt.legend()
-    plt.title(f'{variant} {algorithm}')
+    plt.title(f'{variant} {algorithm_name}')
     plt.show()

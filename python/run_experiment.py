@@ -5,9 +5,12 @@ import optimizers
 from simulate import simulate_variant_response, VARIANTS
 from plotting import plot_results
 
+
 def parse_args():
     """Parse command-line arguments."""
-    parser = argparse.ArgumentParser(description='Optimize parameters and plot results.')
+    parser = argparse.ArgumentParser(
+        description='Optimize parameters and plot results.'
+    )
     parser.add_argument(
         'variant',
         choices=VARIANTS,
@@ -21,8 +24,14 @@ def parse_args():
         default='direct',
         help='Optimization method.'
     )
-    parser.add_argument('--seed', type=int, default=42, help='Random seed for stochastic optimizers.')
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=42,
+        help='Random seed for stochastic optimizers.'
+    )
     return parser.parse_args()
+
 
 def main():
     """Load data, run chosen optimizer, and plot results."""
@@ -42,44 +51,73 @@ def main():
 
     # Define which parameter indices to optimize
     opt_param_indices = list(range(len(base_params)))
-    
+
     # Define bounds for the optimization
-    # Using a generic approach here; can be refined based on parameter knowledge
-    bounds = [(p * 0.1, p * 10) if p > 0 else (-1e-6, 1e-6) for p in base_params]
+    # Generic bounds; refine based on parameter knowledge
+    bounds = [
+        (p * 0.1, p * 10) if p > 0 else (-1e-6, 1e-6)
+        for p in base_params
+    ]
     # Ensure lower bound is not greater than upper bound
     for i, (low, high) in enumerate(bounds):
         if low > high:
             bounds[i] = (high, low)
-    
+
     # Set random seed for reproducibility
     np.random.seed(args.seed)
 
     if args.method == 'bo':
         algorithm_name = 'Bayesian Optimization'
         optimized_params = optimizers.run_bayesian_optimization(
-            base_params, model_params, experimental_data, args.variant, bounds, opt_param_indices, args.seed
+            base_params,
+            model_params,
+            experimental_data,
+            args.variant,
+            bounds,
+            opt_param_indices,
+            args.seed,
         )
     elif args.method == 'cmaes':
         algorithm_name = 'CMA-ES'
         optimized_params = optimizers.run_cma_es(
-            base_params, model_params, experimental_data, args.variant, bounds, opt_param_indices, args.seed
+            base_params,
+            model_params,
+            experimental_data,
+            args.variant,
+            bounds,
+            opt_param_indices,
+            args.seed,
         )
     elif args.method == 'lshade':
         algorithm_name = 'L-SHADE'
         optimized_params = optimizers.run_lshade(
-            base_params, model_params, experimental_data, args.variant, bounds, opt_param_indices
+            base_params,
+            model_params,
+            experimental_data,
+            args.variant,
+            bounds,
+            opt_param_indices,
         )
     elif args.method == 'pso':
         algorithm_name = 'Particle Swarm Optimization'
         optimized_params = optimizers.run_pso(
-            base_params, model_params, experimental_data, args.variant, bounds, opt_param_indices
+            base_params,
+            model_params,
+            experimental_data,
+            args.variant,
+            bounds,
+            opt_param_indices,
         )
     elif args.method == 'direct':
         algorithm_name = 'DIRECT'
         optimized_params = optimizers.run_direct(
-            base_params, model_params, experimental_data, args.variant, bounds, opt_param_indices
+            base_params,
+            model_params,
+            experimental_data,
+            args.variant,
+            bounds,
+            opt_param_indices,
         )
-
 
     print(f"Optimized parameters using {algorithm_name}:")
     print(optimized_params)
@@ -93,8 +131,9 @@ def main():
         simulated,
         experimental_data,
         args.variant,
-        algorithm_name
+        algorithm_name,
     )
+
 
 if __name__ == '__main__':
     main()
