@@ -21,7 +21,7 @@ def simulate_variant_response(params, model_params, variant):
 
     Args:
         params: np.ndarray, fitted parameter vector.
-        model_params: dict, base model parameters with keys 'P_x', 'P_y', 'P_z'.
+        model_params: dict, base parameters with keys 'P_x', 'P_y', 'P_z'.
         variant: str, one of VARIANTS.
 
     Returns:

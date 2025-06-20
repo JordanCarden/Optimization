@@ -75,10 +75,17 @@ def apply_composite_noise(trace, time, a, b, rho,
     return noisy
 
 
-def visualize_aav_with_experiments(true_params_list, a, b, rho,
-                                  sigma_delta, drift_slope,
-                                  num_samples, noise_type,
-                                  noise_std):
+def visualize_aav_with_experiments(
+        true_params_list,
+        a,
+        b,
+        rho,
+        sigma_delta,
+        drift_slope,
+        num_samples,
+        noise_type,
+        noise_std,
+):
     """Plot noisy synthetic AAV data and experiments for all variants.
 
     Args:
@@ -117,13 +124,15 @@ def visualize_aav_with_experiments(true_params_list, a, b, rho,
         if noise_type == 'gaussian':
             noisy = apply_gaussian_noise(clean0, noise_std)
         else:
-            noisy = apply_composite_noise(clean0,
-                                          time,
-                                          a,
-                                          b,
-                                          rho,
-                                          sigma_delta,
-                                          drift_slope)
+            noisy = apply_composite_noise(
+                clean0,
+                time,
+                a,
+                b,
+                rho,
+                sigma_delta,
+                drift_slope,
+            )
         plt.plot(time, noisy, label=f'{noise_type} synthetic {i+1}')
     plt.xlabel('Time (min)')
     plt.ylabel('GFP (AU)')

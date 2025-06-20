@@ -8,7 +8,7 @@ def compute_model_derivatives(time, state, params, model_params):
         time: float, simulation time.
         state: np.ndarray with length 11, species concentrations.
         params: np.ndarray, fitted parameter vector.
-        model_params: dict, base model parameters with keys 'P_x', 'P_y', 'P_z'.
+        model_params: dict, base parameters with keys 'P_x', 'P_y', 'P_z'.
 
     Returns:
         np.ndarray with length 11, derivatives d(state)/dt.
