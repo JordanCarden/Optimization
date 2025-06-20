@@ -1,137 +1,226 @@
+import math
 import numpy as np
-from scipy.optimize import differential_evolution
+import cma
+from scipy.optimize import direct
+from skopt import gp_minimize
+from mealpy.evolutionary_based.SHADE import L_SHADE
+from pyswarms.single.global_best import GlobalBestPSO
 
 from simulate import simulate_variant_response
 
-OPT_PARAM_INDICES = []
 
-
-def objective_function(candidate_params,
-                       base_params,
-                       model_params,
-                       experimental_data,
-                       variant):
-    """Compute SSE between simulation and experiment.
+def objective_function(candidate_params, base_params,
+                       model_params, experimental_data,
+                       variant, opt_param_indices):
+    """Compute sum of squared errors between simulation and experiment.
 
     Args:
-        candidate_params: np.ndarray, values for optimized indices.
-        base_params: np.ndarray, original parameter vector.
-        model_params: dict, base model parameters.
-        experimental_data: dict[str, np.ndarray], maps variants to data.
-        variant: str, one of simulate.VARIANTS.
+        candidate_params (np.ndarray): Parameters to optimize.
+        base_params (np.ndarray): Full parameter vector.
+        model_params (dict): Simulation settings.
+        experimental_data (dict): Observed data per variant.
+        variant (str): Variant identifier.
+        opt_param_indices (Sequence[int]): Indices of params to replace.
 
     Returns:
-        float, sum of squared errors. Returns np.inf on size mismatch.
+        float: SSE or infinity if output sizes mismatch.
     """
-    trial_params = base_params.copy()
-    trial_params[OPT_PARAM_INDICES] = candidate_params
-    sim = simulate_variant_response(trial_params, model_params, variant)
+    trial = base_params.copy()
+    trial[opt_param_indices] = candidate_params
+    sim = simulate_variant_response(trial, model_params, variant)
     exp = experimental_data[variant]
     if sim.size != exp.size:
-        return np.inf
+        return float(np.inf)
     return float(np.sum((sim - exp) ** 2))
 
 
-def run_genetic_optimization(base_params,
-                             model_params,
-                             experimental_data,
-                             variant):
-    """Optimize parameters using SciPy’s differential_evolution.
+def run_bayesian_optimization(base_params, model_params,
+                              experimental_data, variant, bounds,
+                              opt_param_indices, random_seed):
+    """Optimize using Bayesian Optimization with a 5 000-call budget.
 
     Args:
-        base_params: np.ndarray, original parameter vector.
-        model_params: dict, base model parameters.
-        experimental_data: dict[str, np.ndarray], maps variants to data.
-        variant: str, one of simulate.VARIANTS.
+        base_params (np.ndarray): Initial parameter vector.
+        model_params (dict): Simulation settings.
+        experimental_data (dict): Observed data per variant.
+        variant (str): Variant identifier.
+        bounds (Sequence[tuple]): Parameter bounds.
+        opt_param_indices (Sequence[int]): Indices of params to update.
+        random_seed (int): Random seed.
 
     Returns:
-        np.ndarray, optimized parameter vector.
+        np.ndarray: Full parameter vector with optimized values.
     """
-    bounds = [
-        (0, max(base_params[i] * 100, 1e-9))
-        for i in OPT_PARAM_INDICES
-    ]
-    result = differential_evolution(
+    result = gp_minimize(
         func=lambda x: objective_function(
-            x, base_params, model_params, experimental_data, variant
+            x, base_params, model_params, experimental_data,
+            variant, opt_param_indices
         ),
-        bounds=bounds,
-        popsize=15,
-        maxiter=200,
-        mutation=0.5,
-        recombination=0.7,
-        tol=1e-7,
-        disp=True
+        dimensions=bounds,
+        acq_func='gp_hedge',
+        n_calls=5000,
+        n_initial_points=30,
+        initial_point_generator='lhs',
+        random_state=random_seed,
     )
     optimized = base_params.copy()
-    optimized[OPT_PARAM_INDICES] = result.x
+    optimized[opt_param_indices] = result.x
     return optimized
 
 
-def run_simulated_annealing(base_params,
-                            model_params,
-                            experimental_data,
-                            variant,
-                            n_iterations=1000,
-                            initial_temp=1.0,
-                            cooling_rate=0.995):
-    """Optimize parameters using simulated annealing.
+def run_cma_es(base_params, model_params, experimental_data,
+               variant, bounds, opt_param_indices, random_seed):
+    """Optimize using CMA-ES with a 5 000-call budget.
 
     Args:
-        base_params: np.ndarray, original parameter vector.
-        model_params: dict, base model parameters.
-        experimental_data: dict[str, np.ndarray], maps variants to data.
-        variant: str, one of simulate.VARIANTS.
-        n_iterations: int, number of annealing steps.
-        initial_temp: float, starting temperature.
-        cooling_rate: float, factor to multiply temperature per iteration.
+        base_params (np.ndarray): Initial parameter vector.
+        model_params (dict): Simulation settings.
+        experimental_data (dict): Observed data per variant.
+        variant (str): Variant identifier.
+        bounds (Sequence[tuple]): Parameter bounds.
+        opt_param_indices (Sequence[int]): Indices of params to update.
+        random_seed (int): Random seed.
 
     Returns:
-        np.ndarray, best‐found parameter vector (base_params with OPT_PARAM_INDICES replaced).
+        np.ndarray: Full parameter vector with optimized values.
     """
-    bounds = [
-        (0, max(base_params[i] * 100, 1e-9))
-        for i in OPT_PARAM_INDICES
-    ]
-    current = base_params.copy()
-    current_vals = base_params[OPT_PARAM_INDICES].copy()
-    best = current.copy()
-    best_obj = objective_function(
-        current_vals, base_params, model_params, experimental_data, variant
-    )
-    temp = initial_temp
+    lower = [b[0] for b in bounds]
+    upper = [b[1] for b in bounds]
+    x0 = np.array([(l + u) / 2 for l, u in bounds])
+    sigma0 = 0.25 * np.mean([u - l for l, u in bounds])
+    popsize = 4 + int(3 * np.log(len(bounds)))
+    counter = {'count': 0}
 
-    for _ in range(n_iterations):
-        candidate_vals = current_vals.copy()
-        for idx, param_index in enumerate(OPT_PARAM_INDICES):
-            low, high = bounds[idx]
-            perturb = np.random.normal(
-                loc=0.0, scale=(high - low) * 0.1
-            )
-            new_val = candidate_vals[idx] + perturb
-            candidate_vals[idx] = np.clip(new_val, low, high)
-
-        candidate = base_params.copy()
-        candidate[OPT_PARAM_INDICES] = candidate_vals
-
-        obj = objective_function(
-            candidate_vals,
-            base_params,
-            model_params,
-            experimental_data,
-            variant
+    def wrapped_obj(x):
+        counter['count'] += 1
+        return objective_function(
+            x, base_params, model_params, experimental_data,
+            variant, opt_param_indices
         )
-        delta = obj - best_obj
 
-        if delta < 0 or np.random.rand() < np.exp(-delta / temp):
-            current = candidate.copy()
-            current_vals = candidate_vals.copy()
-            if obj < best_obj:
-                best = candidate.copy()
-                best_obj = obj
+    options = {
+        'bounds': [lower, upper],
+        'maxfevals': 5000,
+        'popsize': popsize,
+        'seed': random_seed,
+    }
+    solution, _ = cma.fmin2(wrapped_obj, x0, sigma0, options=options)
+    optimized = base_params.copy()
+    optimized[opt_param_indices] = solution
+    return optimized
 
-        temp *= cooling_rate
-        if temp < 1e-8:
-            temp = 1e-8
 
-    return best
+def run_lshade(base_params, model_params, experimental_data,
+               variant, bounds, opt_param_indices):
+    """Optimize using L-SHADE with a 5 000-call budget.
+
+    Args:
+        base_params (np.ndarray): Initial parameter vector.
+        model_params (dict): Simulation settings.
+        experimental_data (dict): Observed data per variant.
+        variant (str): Variant identifier.
+        bounds (Sequence[tuple]): Parameter bounds.
+        opt_param_indices (Sequence[int]): Indices of params to update.
+
+    Returns:
+        np.ndarray: Full parameter vector with optimized values.
+    """
+    lb = np.array([b[0] for b in bounds])
+    ub = np.array([b[1] for b in bounds])
+    pop_size = 100
+    epoch = math.ceil(5000 / pop_size)
+
+    def wrapped_obj(sol):
+        return objective_function(
+            sol, base_params, model_params, experimental_data,
+            variant, opt_param_indices
+        )
+
+    problem = {
+        'fit_func': wrapped_obj,
+        'lb': lb,
+        'ub': ub,
+        'minmax': 'min',
+    }
+    model = L_SHADE(epoch=epoch, pop_size=pop_size)
+    model.solve(problem)
+    optimized = base_params.copy()
+    optimized[opt_param_indices] = model.g_best.solution
+    return optimized
+
+
+def run_pso(base_params, model_params, experimental_data, variant,
+            bounds, opt_param_indices):
+    """Optimize using Particle Swarm Optimization (5 000-call budget).
+
+    Args:
+        base_params (np.ndarray): Initial parameter vector.
+        model_params (dict): Simulation settings.
+        experimental_data (dict): Observed data per variant.
+        variant (str): Variant identifier.
+        bounds (Sequence[tuple]): Parameter bounds.
+        opt_param_indices (Sequence[int]): Indices of params to update.
+
+    Returns:
+        np.ndarray: Full parameter vector with optimized values.
+    """
+    n_particles = 50
+    n_iterations = 100
+    lb = np.array([b[0] for b in bounds])
+    ub = np.array([b[1] for b in bounds])
+    options = {'c1': 0.5, 'c2': 0.3, 'w': 0.9}
+    optimizer = GlobalBestPSO(
+        n_particles=n_particles,
+        dimensions=len(bounds),
+        options=options,
+        bounds=(lb, ub),
+    )
+
+    def pso_obj(x):
+        return np.array([
+            objective_function(
+                x[i], base_params, model_params, experimental_data,
+                variant, opt_param_indices
+            ) for i in range(x.shape[0])
+        ])
+
+    for i in range(n_iterations):
+        optimizer.options['w'] = 0.9 - 0.5 * i / (n_iterations - 1)
+        optimizer.optimize(pso_obj, iters=1, n_processes=None)
+
+    best_pos = optimizer.best_pos
+    optimized = base_params.copy()
+    optimized[opt_param_indices] = best_pos
+    return optimized
+
+
+def run_direct(base_params, model_params, experimental_data,
+               variant, bounds, opt_param_indices):
+    """Optimize using the DIRECT algorithm with a 5 000-call budget.
+
+    Args:
+        base_params (np.ndarray): Initial parameter vector.
+        model_params (dict): Simulation settings.
+        experimental_data (dict): Observed data per variant.
+        variant (str): Variant identifier.
+        bounds (Sequence[tuple]): Parameter bounds.
+        opt_param_indices (Sequence[int]): Indices of params to update.
+
+    Returns:
+        np.ndarray: Full parameter vector with optimized values.
+    """
+    counter = {'count': 0}
+
+    def wrapped_obj(x):
+        counter['count'] += 1
+        return objective_function(
+            x, base_params, model_params, experimental_data,
+            variant, opt_param_indices
+        )
+
+    result = direct(
+        wrapped_obj, bounds=bounds, maxfun=5000, locally_biased=False
+    )
+    optimized = base_params.copy()
+    optimized[opt_param_indices] = result.x
+    return optimized
