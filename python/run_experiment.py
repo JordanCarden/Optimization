@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument(
         'method',
         choices=['cma', 'lshade', 'bayes', 'saea', 'pso'],
-        default='cma',  # Changed default from 'de'
+        default='cma',
         help='Optimization method.'
     )
     return parser.parse_args()
