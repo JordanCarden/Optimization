@@ -46,13 +46,6 @@ def generate_datasets():
     Returns:
         None
     """
-    if GROUND_TRUTH_PARAMS.size != 21:
-        print(
-            "Error: update 'ground_truth_params' with 21 values "
-            "before running."
-        )
-        return
-
     time_s = np.arange(0, SIM_DURATION_S + SIM_STEP_S, SIM_STEP_S)
     sampled_s = time_s[::SAMPLE_STEP]
     time_min = sampled_s / 60
