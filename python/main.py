@@ -1,6 +1,7 @@
+"""Entry point for running the CMA-ES optimization."""
+
 import os
 import time
-import numpy as np
 import pandas as pd
 
 from objective_function import ObjectiveTracker
@@ -63,7 +64,11 @@ def main() -> None:
     total_run_end_time = time.time()
     total_duration_s = total_run_end_time - total_run_start_time
 
-    print('\n--- Optimization Complete ---')
-    print(f'Total optimization time: {total_duration_s:.2f} seconds')
-    print(f'Saved history to {output_file}')
-    print(f'Best SSE found: {best_sse:.4f}')
+    print("\n--- Optimization Complete ---")
+    print(f"Total optimization time: {total_duration_s:.2f} seconds")
+    print(f"Saved history to {output_file}")
+    print(f"Best SSE found: {best_sse:.4f}")
+
+
+if __name__ == "__main__":
+    main()
