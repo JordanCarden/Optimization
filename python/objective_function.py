@@ -53,6 +53,9 @@ class ObjectiveTracker:
             float: Sum of squared errors (SSE) between observed data and
                 simulated trace.
         """
+        if self.call_count >= 5000:
+            raise RuntimeError('Evaluation budget exceeded')
+
         self.call_count += 1
 
         params_to_sim = self.base_params.copy()
