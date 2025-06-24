@@ -1,19 +1,47 @@
-"""Entry point for running the CMA-ES optimization."""
+"""Entry point for running model parameter optimization."""
 
 import os
 import time
+import argparse
 import pandas as pd
 
 from objective_function import ObjectiveTracker
-from optimizers import run_cma_es
+from optimizers import run_bayesian_optimization, run_cma_es
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed arguments for optimizer selection,
+        seed, and dataset number.
+    """
+    parser = argparse.ArgumentParser(description="Run optimization routine")
+    parser.add_argument(
+        "--optimizer",
+        choices=["cmaes", "bo"],
+        default="cmaes",
+        help="Which optimizer to use (cmaes or bo)",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=1,
+        help="Random seed for reproducibility",
+    )
+    parser.add_argument(
+        "--dataset",
+        type=int,
+        default=1,
+        help="Dataset number to optimize on",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    """Run CMA-ES optimization and save evaluation history.
+    """Run optimization and save evaluation history."""
+    args = parse_args()
 
-    Returns:
-        None
-    """
     total_run_start_time = time.time()
 
     base_params = pd.read_csv(
@@ -36,10 +64,10 @@ def main() -> None:
     opt_param_indices = list(range(len(base_params)))
     opt_bounds = [bounds[i] for i in opt_param_indices]
 
-    dataset_path = 'data/dataset_1.csv'
-    run_seed = 1
+    dataset_path = f"data/dataset_{args.dataset}.csv"
     output_file = (
-        f'results/cma_es_history_dataset_1_run_{run_seed}.csv'
+        f"results/{args.optimizer}_history_"
+        f"dataset_{args.dataset}_run_{args.seed}.csv"
     )
 
     objective = ObjectiveTracker(
@@ -47,11 +75,18 @@ def main() -> None:
         base_params=base_params,
         opt_param_indices=opt_param_indices,
     )
-    best_solution, best_sse = run_cma_es(
-        objective_tracker=objective,
-        bounds=opt_bounds,
-        random_seed=run_seed,
-    )
+    if args.optimizer == "bo":
+        best_solution, best_sse = run_bayesian_optimization(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
+    else:
+        best_solution, best_sse = run_cma_es(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
 
     final_params = base_params.copy()
     final_params[opt_param_indices] = best_solution
