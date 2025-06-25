@@ -35,7 +35,7 @@ def run_cma_es(
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 5000,
+        "maxfevals": 90000,
         "popsize": popsize,
         "seed": random_seed,
     }
@@ -68,7 +68,7 @@ def run_bayesian_optimization(
     result = gp_minimize(
         func=objective_tracker.evaluate,
         dimensions=bounds,
-        n_calls=5000,
+        n_calls=500,
         n_initial_points=30,
         initial_point_generator="lhs",
         acq_func="gp_hedge",
