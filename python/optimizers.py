@@ -154,12 +154,19 @@ def run_pso(
         init_pos=init_pos,
     )
 
+    def _swarm_objective(x: np.ndarray) -> np.ndarray:
+        """Evaluate a batch of particles using the single-vector objective."""
+        costs = np.zeros(x.shape[0])
+        for idx, particle in enumerate(x):
+            costs[idx] = objective_tracker.evaluate(particle)
+        return costs
+
     best_cost = np.inf
     best_pos = None
     for i in range(100):
         optimizer.options["w"] = 0.9 - 0.5 * (i / 99)
         cost, pos = optimizer.optimize(
-            objective_tracker.evaluate,
+            _swarm_objective,
             iters=1,
             verbose=False,
         )
