@@ -125,7 +125,7 @@ def run_lshade(
     model = L_SHADE(epoch=1000, pop_size=100, verbose=False)
 
     try:
-        model.solve(problem, starting_positions=init_pop)
+        model.solve(problem, starting_solutions=init_pop)
     except StopIteration:
         pass
 
