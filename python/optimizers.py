@@ -8,9 +8,21 @@ from __future__ import annotations
 
 import cma
 import numpy as np
+from scipy.stats import qmc
 from skopt import gp_minimize
 
 from objective_function import ObjectiveTracker
+
+
+def _lhs_samples(
+    bounds: list[tuple[float, float]], n_samples: int, seed: int
+) -> np.ndarray:
+    """Return Latin Hypercube samples within the given bounds."""
+    sampler = qmc.LatinHypercube(d=len(bounds), seed=seed)
+    sample = sampler.random(n=n_samples)
+    lower = np.array([b[0] for b in bounds])
+    upper = np.array([b[1] for b in bounds])
+    return qmc.scale(sample, lower, upper)
 
 
 def run_cma_es(
@@ -28,7 +40,7 @@ def run_cma_es(
     Returns:
         Tuple of best-found parameter vector and its SSE value.
     """
-    x0 = np.array([(lb + ub) / 2 for lb, ub in bounds])
+    x0 = _lhs_samples(bounds, 1, random_seed)[0]
     sigma0 = 0.25 * np.mean([ub - lb for lb, ub in bounds])
     popsize = 4 + int(3 * np.log(len(bounds)))
 
@@ -108,10 +120,12 @@ def run_lshade(
         "log_to": None,
     }
 
+    np.random.seed(random_seed)
+    init_pop = _lhs_samples(bounds, 100, random_seed)
     model = L_SHADE(epoch=1000, pop_size=100, verbose=False)
 
     try:
-        model.solve(problem, seed=random_seed)
+        model.solve(problem, starting_positions=init_pop)
     except StopIteration:
         pass
 
@@ -126,8 +140,10 @@ def run_pso(
     """Run Particle Swarm Optimization with inertia weight scheduling."""
     import pyswarms as ps
 
+    np.random.seed(random_seed)
     lower = np.array([b[0] for b in bounds])
     upper = np.array([b[1] for b in bounds])
+    init_pos = _lhs_samples(bounds, 50, random_seed)
 
     options = {"c1": 0.5, "c2": 0.3, "w": 0.9}
     optimizer = ps.single.GlobalBestPSO(
@@ -135,6 +151,7 @@ def run_pso(
         dimensions=len(bounds),
         options=options,
         bounds=(lower, upper),
+        init_pos=init_pos,
     )
 
     best_cost = np.inf
