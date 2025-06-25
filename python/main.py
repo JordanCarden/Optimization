@@ -6,7 +6,13 @@ import argparse
 import pandas as pd
 
 from objective_function import ObjectiveTracker
-from optimizers import run_bayesian_optimization, run_cma_es
+from optimizers import (
+    run_bayesian_optimization,
+    run_cma_es,
+    run_lshade,
+    run_pso,
+    run_direct,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -19,9 +25,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run optimization routine")
     parser.add_argument(
         "--optimizer",
-        choices=["cmaes", "bo"],
+        choices=["cmaes", "bo", "lshade", "pso", "direct"],
         default="cmaes",
-        help="Which optimizer to use (cmaes or bo)",
+        help=(
+            "Which optimizer to use (cmaes, bo, lshade, pso, or direct)"
+        ),
     )
     parser.add_argument(
         "--seed",
@@ -81,8 +89,26 @@ def main() -> None:
             bounds=opt_bounds,
             random_seed=args.seed,
         )
-    else:
+    elif args.optimizer == "cmaes":
         best_solution, best_sse = run_cma_es(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
+    elif args.optimizer == "lshade":
+        best_solution, best_sse = run_lshade(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
+    elif args.optimizer == "pso":
+        best_solution, best_sse = run_pso(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
+    else:
+        best_solution, best_sse = run_direct(
             objective_tracker=objective,
             bounds=opt_bounds,
             random_seed=args.seed,

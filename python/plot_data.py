@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 from scipy.io import loadmat
 
 DATA_DIR = 'data'
