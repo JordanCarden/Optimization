@@ -120,7 +120,7 @@ def main() -> None:
     if not os.path.exists('results'):
         os.makedirs('results')
     history_df = pd.DataFrame(objective.history)
-    history_df.to_csv(output_file, index=False)
+    history_df.to_csv(output_file, index=False, float_format='%.8f')
 
     total_run_end_time = time.time()
     total_duration_s = total_run_end_time - total_run_start_time
