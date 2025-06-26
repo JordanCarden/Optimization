@@ -75,7 +75,7 @@ class ObjectiveTracker:
         elapsed_seconds = time.time() - self.start_time
 
         self.history.append({
-            'params': list(x),
+            'params': [float(p) for p in x],
             'sse': sse,
             'elapsed_time_s': elapsed_seconds,
         })
