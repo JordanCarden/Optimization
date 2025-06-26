@@ -39,10 +39,8 @@ def run_cma_es(
 
     Returns:
         Tuple of best-found parameter vector and its SSE value.
-
-    The optimizer starts from the midpoint of each parameter bound.
     """
-    x0 = np.array([(lb + ub) / 2 for lb, ub in bounds])
+    x0 = x0 = _lhs_samples(bounds, 1, random_seed)[0]
     sigma0 = 0.25 * np.mean([ub - lb for lb, ub in bounds])
     popsize = 4 + int(3 * np.log(len(bounds)))
 
