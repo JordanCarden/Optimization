@@ -50,7 +50,8 @@ def run_cma_es(
         "popsize": popsize,
         "seed": random_seed,
         "tolfun": 0,
-        "tolx": 0
+        "tolx": 0,
+        "verb_log": 0
     }
 
     solution, es = cma.fmin2(
