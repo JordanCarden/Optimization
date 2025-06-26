@@ -1,8 +1,8 @@
 """Entry point for running model parameter optimization."""
 
-import argparse
 import os
 import time
+import argparse
 import pandas as pd
 
 from objective_function import ObjectiveTracker
@@ -16,31 +16,45 @@ from optimizers import (
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments for optimizer selection.
+    """Parse command-line arguments.
 
     Returns:
-        argparse.Namespace: Parsed arguments containing only the optimizer
-        choice.
+        argparse.Namespace: Parsed arguments for optimizer selection,
+        seed, and dataset number.
     """
     parser = argparse.ArgumentParser(description="Run optimization routine")
     parser.add_argument(
         "--optimizer",
         choices=["cmaes", "bo", "lshade", "pso", "direct"],
         default="cmaes",
-        help="Which optimizer to use (cmaes, bo, lshade, pso, or direct)",
+        help=(
+            "Which optimizer to use (cmaes, bo, lshade, pso, or direct)"
+        ),
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=1,
+        help="Random seed for reproducibility",
+    )
+    parser.add_argument(
+        "--dataset",
+        type=int,
+        default=1,
+        help="Dataset number to optimize on",
     )
     return parser.parse_args()
 
 
 def main() -> None:
-    """Run optimizations for all datasets and seeds."""
+    """Run optimization and save evaluation history."""
     args = parse_args()
 
     total_run_start_time = time.time()
 
     base_params = pd.read_csv(
-        "data/ground_truth_params.csv"
-    )["parameter_value"].values
+        'data/ground_truth_params.csv'
+    )['parameter_value'].values
 
     lower_bounds = [
         0.1, 0.0005, 1.0, 0.5, 1.0,
@@ -58,71 +72,63 @@ def main() -> None:
     opt_param_indices = list(range(len(base_params)))
     opt_bounds = [bounds[i] for i in opt_param_indices]
 
-    if not os.path.exists("results"):
-        os.makedirs("results")
+    dataset_path = f"data/dataset_{args.dataset}.csv"
+    output_file = (
+        f"results/{args.optimizer}_history_"
+        f"dataset_{args.dataset}_run_{args.seed}.csv"
+    )
 
-    for dataset in [1, 2, 3]:
-        for seed in [1, 2, 3]:
-            dataset_path = f"data/dataset_{dataset}.csv"
-            output_file = (
-                f"results/{args.optimizer}_history_"
-                f"dataset_{dataset}_run_{seed}.csv"
-            )
+    objective = ObjectiveTracker(
+        dataset_path=dataset_path,
+        base_params=base_params,
+        opt_param_indices=opt_param_indices,
+    )
+    if args.optimizer == "bo":
+        best_solution, best_sse = run_bayesian_optimization(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
+    elif args.optimizer == "cmaes":
+        best_solution, best_sse = run_cma_es(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
+    elif args.optimizer == "lshade":
+        best_solution, best_sse = run_lshade(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
+    elif args.optimizer == "pso":
+        best_solution, best_sse = run_pso(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
+    else:
+        best_solution, best_sse = run_direct(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
 
-            objective = ObjectiveTracker(
-                dataset_path=dataset_path,
-                base_params=base_params,
-                opt_param_indices=opt_param_indices,
-            )
+    final_params = base_params.copy()
+    final_params[opt_param_indices] = best_solution
 
-            if args.optimizer == "bo":
-                best_solution, best_sse = run_bayesian_optimization(
-                    objective_tracker=objective,
-                    bounds=opt_bounds,
-                    random_seed=seed,
-                )
-            elif args.optimizer == "cmaes":
-                best_solution, best_sse = run_cma_es(
-                    objective_tracker=objective,
-                    bounds=opt_bounds,
-                    random_seed=seed,
-                )
-            elif args.optimizer == "lshade":
-                best_solution, best_sse = run_lshade(
-                    objective_tracker=objective,
-                    bounds=opt_bounds,
-                    random_seed=seed,
-                )
-            elif args.optimizer == "pso":
-                best_solution, best_sse = run_pso(
-                    objective_tracker=objective,
-                    bounds=opt_bounds,
-                    random_seed=seed,
-                )
-            else:
-                best_solution, best_sse = run_direct(
-                    objective_tracker=objective,
-                    bounds=opt_bounds,
-                    random_seed=seed,
-                )
-
-            final_params = base_params.copy()
-            final_params[opt_param_indices] = best_solution
-
-            history_df = pd.DataFrame(objective.history)
-            history_df.to_csv(output_file, index=False, float_format="%.8f")
-
-            print("\n--- Optimization Complete ---")
-            print(
-                f"Dataset: {dataset}, Seed: {seed}, Best SSE: {best_sse:.4f}"
-            )
-            print(f"Saved history to {output_file}")
+    if not os.path.exists('results'):
+        os.makedirs('results')
+    history_df = pd.DataFrame(objective.history)
+    history_df.to_csv(output_file, index=False, float_format='%.8f')
 
     total_run_end_time = time.time()
     total_duration_s = total_run_end_time - total_run_start_time
 
-    print("\nAll optimizations finished")
-    print(f"Total time for all runs: {total_duration_s:.2f} seconds")
+    print("\n--- Optimization Complete ---")
+    print(f"Total optimization time: {total_duration_s:.2f} seconds")
+    print(f"Saved history to {output_file}")
+    print(f"Best SSE found: {best_sse:.4f}")
 
 
 if __name__ == "__main__":
