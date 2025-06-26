@@ -46,9 +46,11 @@ def run_cma_es(
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 100000,
+        "maxfevals": 1000,
         "popsize": popsize,
         "seed": random_seed,
+        "tolfun": 0,
+        "tolx": 0
     }
 
     solution, es = cma.fmin2(
@@ -103,7 +105,7 @@ def run_lshade(
 
     var = FloatVar(lb=tuple(lower), ub=tuple(upper), name="param")
 
-    budget = 100000
+    budget = 1000
     calls = 0
 
     def wrapped(x: np.ndarray) -> float:
@@ -163,7 +165,7 @@ def run_pso(
 
     best_cost = np.inf
     best_pos = None
-    for i in range(2000):
+    for i in range(20):
         optimizer.options["w"] = 0.9 - 0.5 * (i / 99)
         cost, pos = optimizer.optimize(
             _swarm_objective,
@@ -187,7 +189,7 @@ def run_direct(
     result = direct(
         func=objective_tracker.evaluate,
         bounds=bounds,
-        maxfun=100000,
+        maxfun=1000,
         locally_biased=False,
     )
 
