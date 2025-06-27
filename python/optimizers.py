@@ -40,17 +40,18 @@ def run_cma_es(
     Returns:
         Tuple of best-found parameter vector and its SSE value.
     """
-    x0 = x0 = _lhs_samples(bounds, 1, random_seed)[0]
+    x0 = _lhs_samples(bounds, 1, random_seed)[0]
     sigma0 = 0.25 * np.mean([ub - lb for lb, ub in bounds])
     popsize = 4 + int(3 * np.log(len(bounds)))
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 1000,
+        "maxfevals": 100000,
         "popsize": popsize,
         "seed": random_seed,
         "tolfun": 0,
         "tolx": 0,
+        "tolstagnation": 0,
         "verb_log": 0
     }
 
@@ -97,7 +98,7 @@ def run_lshade(
     bounds: list[tuple[float, float]],
     random_seed: int,
 ) -> tuple[np.ndarray, float]:
-    """Run the L-SHADE algorithm with a 5k evaluation budget."""
+    """Run the L-SHADE algorithm with a 100k evaluation budget."""
     from mealpy import FloatVar
     from mealpy.evolutionary_based.SHADE import L_SHADE
 
@@ -106,7 +107,7 @@ def run_lshade(
 
     var = FloatVar(lb=tuple(lower), ub=tuple(upper), name="param")
 
-    budget = 1000
+    budget = 100000
     calls = 0
 
     def wrapped(x: np.ndarray) -> float:
@@ -125,7 +126,7 @@ def run_lshade(
 
     np.random.seed(random_seed)
     init_pop = _lhs_samples(bounds, 100, random_seed)
-    model = L_SHADE(epoch=1000, pop_size=100, verbose=False)
+    model = L_SHADE(epoch=10000, pop_size=100, verbose=False)
 
     try:
         model.solve(problem, starting_solutions=init_pop)
@@ -166,8 +167,8 @@ def run_pso(
 
     best_cost = np.inf
     best_pos = None
-    for i in range(20):
-        optimizer.options["w"] = 0.9 - 0.5 * (i / 99)
+    for i in range(2000):
+        optimizer.options["w"] = 0.9 - 0.5 * (i / 1999)
         cost, pos = optimizer.optimize(
             _swarm_objective,
             iters=1,
@@ -190,7 +191,7 @@ def run_direct(
     result = direct(
         func=objective_tracker.evaluate,
         bounds=bounds,
-        maxfun=1000,
+        maxfun=100000,
         locally_biased=False,
     )
 
