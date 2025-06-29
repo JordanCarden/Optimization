@@ -11,10 +11,10 @@ from simulate import simulate_variant_response
 
 
 class ObjectiveTracker:
-    """Evaluate SSE objective and track evaluation history, including timing.
+    """Evaluate SSE objective and track evaluation history.
 
-    Evaluations compute the sum of squared errors (SSE) between observed
-    data and model simulations. Each evaluation is logged with elapsed time.
+    Evaluations compute the sum of squared errors (SSE) between observed data
+    and model simulations. Each call is timed and stored in ``history``.
     """
 
     def __init__(
@@ -22,17 +22,16 @@ class ObjectiveTracker:
         dataset_path: str,
         base_params: np.ndarray,
         opt_param_indices: np.ndarray,
-    ):
-        """Initializes the tracker and records the start time.
+    ) -> None:
+        """Initialize the tracker and load the dataset.
 
         Args:
-            dataset_path (str): Path to the CSV dataset file.
-            base_params (sequence of float): Base parameter values.
-            opt_param_indices (sequence of int): Indices of parameters to
-                optimize.
+            dataset_path: Path to the CSV dataset file.
+            base_params: Base parameter values.
+            opt_param_indices: Indices of parameters to optimize.
         """
         dataset = pd.read_csv(dataset_path)
-        traces = dataset[['replicate_1', 'replicate_2', 'replicate_3']]
+        traces = dataset[["replicate_1", "replicate_2", "replicate_3"]]
         self.mean_trace = traces.mean(axis=1).values
 
         self.base_params = base_params
@@ -43,18 +42,17 @@ class ObjectiveTracker:
         self.start_time = time.time()
 
     def evaluate(self, x: np.ndarray) -> float:
-        """Compute SSE and log the result along with elapsed time.
+        """Compute SSE for a given parameter vector.
 
         Args:
-            x (sequence of float): Parameter values to substitute into the
-                base parameters.
+            x: Parameter values to substitute into the base parameters.
 
         Returns:
-            float: Sum of squared errors (SSE) between observed data and
-                simulated trace.
+            float: Sum of squared errors between observed data and the
+            simulated trace.
         """
         if self.call_count >= 110000:
-            raise RuntimeError('Evaluation budget exceeded')
+            raise RuntimeError("Evaluation budget exceeded")
 
         self.call_count += 1
 
@@ -64,7 +62,7 @@ class ObjectiveTracker:
         simulated = simulate_variant_response(
             params=params_to_sim,
             model_params=MODEL_PARAMS,
-            variant='AAV',
+            variant="AAV",
         )
 
         if np.isnan(simulated).any():
@@ -74,14 +72,15 @@ class ObjectiveTracker:
 
         elapsed_seconds = time.time() - self.start_time
 
-        self.history.append({
-            'params': [float(p) for p in x],
-            'sse': sse,
-            'elapsed_time_s': elapsed_seconds,
-        })
+        self.history.append(
+            {
+                "params": [float(p) for p in x],
+                "sse": sse,
+                "elapsed_time_s": elapsed_seconds,
+            }
+        )
 
         print(
-            f'Call: {self.call_count}, SSE: {sse:.4f}, '
-            f'Time: {elapsed_seconds:.2f}s'
+            f"Call: {self.call_count}, SSE: {sse:.4f}, " f"Time: {elapsed_seconds:.2f}s"
         )
         return sse

@@ -19,17 +19,14 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
     Returns:
-        argparse.Namespace: Parsed arguments for optimizer selection,
-        seed, and dataset number.
+        argparse.Namespace: Parsed optimizer choice, seed, and dataset number.
     """
     parser = argparse.ArgumentParser(description="Run optimization routine")
     parser.add_argument(
         "--optimizer",
         choices=["cmaes", "bo", "lshade", "pso", "direct"],
         default="cmaes",
-        help=(
-            "Which optimizer to use (cmaes, bo, lshade, pso, or direct)"
-        ),
+        help=("Which optimizer to use (cmaes, bo, lshade, pso, or direct)"),
     )
     parser.add_argument(
         "--seed",
@@ -47,26 +44,58 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    """Run optimization and save evaluation history."""
+    """Run the selected optimization routine and save the evaluation history."""
     args = parse_args()
 
     total_run_start_time = time.time()
 
-    base_params = pd.read_csv(
-        'data/ground_truth_params.csv'
-    )['parameter_value'].values
+    base_params = pd.read_csv("data/ground_truth_params.csv")["parameter_value"].values
 
     lower_bounds = [
-        0.1, 0.0005, 1.0, 0.5, 1.0,
-        0.01, 0.01, 0.001, 0.01, 0.01,
-        0.01, 100, 1e-5, 100, 100, 100,
-        1e-8, 1e-8, 0.5, 0.0001, 100,
+        0.1,
+        0.0005,
+        1.0,
+        0.5,
+        1.0,
+        0.01,
+        0.01,
+        0.001,
+        0.01,
+        0.01,
+        0.01,
+        100,
+        1e-5,
+        100,
+        100,
+        100,
+        1e-8,
+        1e-8,
+        0.5,
+        0.0001,
+        100,
     ]
     upper_bounds = [
-        50.0, 0.5, 100.0, 50.0, 100.0,
-        1.0, 1.0, 0.1, 1.0, 1.0,
-        1.0, 1e6, 1e-3, 1e6, 1e6, 1e6,
-        1e-5, 1e-5, 5, 0.01, 1e6,
+        50.0,
+        0.5,
+        100.0,
+        50.0,
+        100.0,
+        1.0,
+        1.0,
+        0.1,
+        1.0,
+        1.0,
+        1.0,
+        1e6,
+        1e-3,
+        1e6,
+        1e6,
+        1e6,
+        1e-5,
+        1e-5,
+        5,
+        0.01,
+        1e6,
     ]
     bounds = list(zip(lower_bounds, upper_bounds))
     opt_param_indices = list(range(len(base_params)))
@@ -117,10 +146,10 @@ def main() -> None:
     final_params = base_params.copy()
     final_params[opt_param_indices] = best_solution
 
-    if not os.path.exists('results'):
-        os.makedirs('results')
+    if not os.path.exists("results"):
+        os.makedirs("results")
     history_df = pd.DataFrame(objective.history)
-    history_df.to_csv(output_file, index=False, float_format='%.8f')
+    history_df.to_csv(output_file, index=False, float_format="%.8f")
 
     total_run_end_time = time.time()
     total_duration_s = total_run_end_time - total_run_start_time
