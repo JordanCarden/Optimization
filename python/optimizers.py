@@ -51,7 +51,7 @@ def run_cma_es(
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 5000,
+        "maxfevals": 100000,
         "popsize": popsize,
         "seed": random_seed,
         "tolfun": 0,
