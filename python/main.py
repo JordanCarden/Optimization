@@ -3,9 +3,10 @@
 import os
 import time
 import argparse
+import numpy as np
 import pandas as pd
 
-from objective_function import ObjectiveTracker
+from objective_function import ObjectiveTracker, unscale_parameters
 from optimizers import (
     run_bayesian_optimization,
     run_cma_es,
@@ -102,6 +103,7 @@ def main() -> None:
     bounds = list(zip(lower_bounds, upper_bounds))
     opt_param_indices = list(range(len(base_params)))
     opt_bounds = [bounds[i] for i in opt_param_indices]
+    norm_bounds = [(0.0, 1.0)] * len(opt_bounds)
 
     dataset_path = f"data/dataset_{args.dataset}.csv"
     output_file = (
@@ -113,40 +115,41 @@ def main() -> None:
         dataset_path=dataset_path,
         base_params=base_params,
         opt_param_indices=opt_param_indices,
+        bounds=opt_bounds,
     )
     if args.optimizer == "bo":
         best_solution, best_sse = run_bayesian_optimization(
             objective_tracker=objective,
-            bounds=opt_bounds,
+            bounds=norm_bounds,
             random_seed=args.seed,
         )
     elif args.optimizer == "cmaes":
         best_solution, best_sse = run_cma_es(
             objective_tracker=objective,
-            bounds=opt_bounds,
+            bounds=norm_bounds,
             random_seed=args.seed,
         )
     elif args.optimizer == "lshade":
         best_solution, best_sse = run_lshade(
             objective_tracker=objective,
-            bounds=opt_bounds,
+            bounds=norm_bounds,
             random_seed=args.seed,
         )
     elif args.optimizer == "pso":
         best_solution, best_sse = run_pso(
             objective_tracker=objective,
-            bounds=opt_bounds,
+            bounds=norm_bounds,
             random_seed=args.seed,
         )
     else:
         best_solution, best_sse = run_direct(
             objective_tracker=objective,
-            bounds=opt_bounds,
+            bounds=norm_bounds,
             random_seed=args.seed,
         )
 
     final_params = base_params.copy()
-    final_params[opt_param_indices] = best_solution
+    final_params[opt_param_indices] = unscale_parameters(best_solution, np.array(opt_bounds))
 
     if not os.path.exists("results"):
         os.makedirs("results")

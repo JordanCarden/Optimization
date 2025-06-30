@@ -16,7 +16,8 @@ def _lhs_samples(
     """Generate Latin Hypercube samples.
 
     Args:
-        bounds: List of ``(lower, upper)`` tuples for each dimension.
+        bounds: List of ``(lower, upper)`` tuples for each dimension. Typically
+            ``(0.0, 1.0)`` for normalized search spaces.
         n_samples: Number of points to sample.
         seed: Random seed for the sampler.
 
@@ -39,18 +40,18 @@ def run_cma_es(
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
-        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        bounds: Sequence of ``(0.0, 1.0)`` tuples for each parameter.
         random_seed: Seed for the CMA-ES optimizer.
 
     Returns:
         Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
     """
     x0 = _lhs_samples(bounds, 1, random_seed)[0]
-    sigma0 = 0.25 * np.mean([ub - lb for lb, ub in bounds])
+    sigma0 = 0.25
     popsize = 4 + int(3 * np.log(len(bounds)))
 
     options = {
-        "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
+        "bounds": [[0.0] * len(bounds), [1.0] * len(bounds)],
         "maxfevals": 100000,
         "popsize": popsize,
         "seed": random_seed,
@@ -79,7 +80,7 @@ def run_bayesian_optimization(
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
-        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        bounds: Sequence of ``(0.0, 1.0)`` tuples for each parameter.
         random_seed: Seed for the optimizer.
 
     Returns:
@@ -87,7 +88,7 @@ def run_bayesian_optimization(
     """
     result = gp_minimize(
         func=objective_tracker.evaluate,
-        dimensions=bounds,
+        dimensions=[(0.0, 1.0)] * len(bounds),
         n_calls=2100,
         n_initial_points=210,
         initial_point_generator="lhs",
@@ -108,7 +109,7 @@ def run_lshade(
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
-        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        bounds: Sequence of ``(0.0, 1.0)`` tuples for each parameter.
         random_seed: Seed for the optimizer.
 
     Returns:
@@ -117,8 +118,8 @@ def run_lshade(
     from mealpy import FloatVar
     from mealpy.evolutionary_based.SHADE import L_SHADE
 
-    lower = [b[0] for b in bounds]
-    upper = [b[1] for b in bounds]
+    lower = [0.0] * len(bounds)
+    upper = [1.0] * len(bounds)
 
     var = FloatVar(lb=tuple(lower), ub=tuple(upper), name="param")
 
@@ -160,7 +161,7 @@ def run_pso(
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
-        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        bounds: Sequence of ``(0.0, 1.0)`` tuples for each parameter.
         random_seed: Seed for the optimizer.
 
     Returns:
@@ -169,8 +170,8 @@ def run_pso(
     import pyswarms as ps
 
     np.random.seed(random_seed)
-    lower = np.array([b[0] for b in bounds])
-    upper = np.array([b[1] for b in bounds])
+    lower = np.zeros(len(bounds))
+    upper = np.ones(len(bounds))
     init_pos = _lhs_samples(bounds, 50, random_seed)
 
     options = {"c1": 1.49445, "c2": 1.49445, "w": 0.729}
@@ -207,7 +208,7 @@ def run_direct(
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
-        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        bounds: Sequence of ``(0.0, 1.0)`` tuples for each parameter.
         random_seed: Seed for the optimizer.
 
     Returns:

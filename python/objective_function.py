@@ -10,6 +10,22 @@ from generate_data import MODEL_PARAMS
 from simulate import simulate_variant_response
 
 
+def unscale_parameters(normalized: np.ndarray, bounds: np.ndarray) -> np.ndarray:
+    """Convert normalized parameters back to their physical units.
+
+    Args:
+        normalized: Array of normalized parameters in ``[0, 1]``.
+        bounds: Array with shape ``(n_params, 2)`` containing ``(lower, upper)``
+            bounds for each parameter.
+
+    Returns:
+        Unscaled parameters corresponding to ``normalized``.
+    """
+    lower = bounds[:, 0]
+    upper = bounds[:, 1]
+    return lower + normalized * (upper - lower)
+
+
 class ObjectiveTracker:
     """Evaluate SSE objective and track evaluation history.
 
@@ -22,6 +38,7 @@ class ObjectiveTracker:
         dataset_path: str,
         base_params: np.ndarray,
         opt_param_indices: np.ndarray,
+        bounds: list[tuple[float, float]],
     ) -> None:
         """Initialize the tracker and load the dataset.
 
@@ -36,16 +53,17 @@ class ObjectiveTracker:
 
         self.base_params = base_params
         self.opt_param_indices = opt_param_indices
+        self.bounds = np.array(bounds, dtype=float)
 
         self.call_count = 0
         self.history = []
         self.start_time = time.time()
 
     def evaluate(self, x: np.ndarray) -> float:
-        """Compute SSE for a given parameter vector.
+        """Compute SSE for a normalized parameter vector.
 
         Args:
-            x: Parameter values to substitute into the base parameters.
+            x: Normalized parameter values in ``[0, 1]``.
 
         Returns:
             float: Sum of squared errors between observed data and the
@@ -57,7 +75,8 @@ class ObjectiveTracker:
         self.call_count += 1
 
         params_to_sim = self.base_params.copy()
-        params_to_sim[self.opt_param_indices] = x
+        unscaled = unscale_parameters(x, self.bounds)
+        params_to_sim[self.opt_param_indices] = unscaled
 
         simulated = simulate_variant_response(
             params=params_to_sim,
@@ -74,7 +93,7 @@ class ObjectiveTracker:
 
         self.history.append(
             {
-                "params": [float(p) for p in x],
+                "params": [float(p) for p in unscaled],
                 "sse": sse,
                 "elapsed_time_s": elapsed_seconds,
             }
