@@ -88,7 +88,7 @@ def run_bayesian_optimization(
     result = gp_minimize(
         func=objective_tracker.evaluate,
         dimensions=bounds,
-        n_calls=5000,
+        n_calls=2100,
         n_initial_points=210,
         initial_point_generator="lhs",
         acq_func="EI",
