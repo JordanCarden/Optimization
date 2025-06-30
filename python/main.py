@@ -57,17 +57,12 @@ def main() -> None:
     )['parameter_value'].values
 
     lower_bounds = [
-        0.1, 0.0005, 1.0, 0.5, 1.0,
-        0.01, 0.01, 0.001, 0.01, 0.01,
-        0.01, 100, 1e-5, 100, 100, 100,
-        1e-8, 1e-8, 0.5, 0.0001, 100,
+
     ]
     upper_bounds = [
-        50.0, 0.5, 100.0, 50.0, 100.0,
-        1.0, 1.0, 0.1, 1.0, 1.0,
-        1.0, 1e6, 1e-3, 1e6, 1e6, 1e6,
-        1e-5, 1e-5, 5, 0.01, 1e6,
+
     ]
+    
     bounds = list(zip(lower_bounds, upper_bounds))
     opt_param_indices = list(range(len(base_params)))
     opt_bounds = [bounds[i] for i in opt_param_indices]
