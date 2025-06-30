@@ -220,6 +220,7 @@ def run_direct(
         bounds=bounds,
         maxfun=5000,
         locally_biased=False,
+        eps=10
     )
 
     return np.array(result.x), float(result.fun)
