@@ -161,5 +161,6 @@ def main() -> None:
     print(f"Saved history to {output_file}")
     print(f"Best SSE found: {best_sse:.4f}")
 
+
 if __name__ == "__main__":
     main()

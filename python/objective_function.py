@@ -19,20 +19,34 @@ class ObjectiveTracker:
 
     def __init__(
         self,
-        dataset_path: str,
+        dataset_path: str | None,
         base_params: np.ndarray,
         opt_param_indices: np.ndarray,
+        mean_trace: np.ndarray | None = None,
     ) -> None:
         """Initialize the tracker and load the dataset.
 
+        Either ``dataset_path`` or ``mean_trace`` must be provided. When
+        ``dataset_path`` is given, the mean trace is computed from the CSV file
+        assuming three replicate columns named ``replicate_1`` --
+        ``replicate_3``.
+
         Args:
-            dataset_path: Path to the CSV dataset file.
+            dataset_path: Path to the CSV dataset file. Ignored if
+                ``mean_trace`` is provided.
             base_params: Base parameter values.
             opt_param_indices: Indices of parameters to optimize.
+            mean_trace: Pre-computed mean trace. If provided, ``dataset_path``
+                is ignored.
         """
-        dataset = pd.read_csv(dataset_path)
-        traces = dataset[["replicate_1", "replicate_2", "replicate_3"]]
-        self.mean_trace = traces.mean(axis=1).values
+        if mean_trace is not None:
+            self.mean_trace = np.asarray(mean_trace, dtype=float)
+        else:
+            if dataset_path is None:
+                raise ValueError("dataset_path or mean_trace must be provided")
+            dataset = pd.read_csv(dataset_path)
+            traces = dataset[["replicate_1", "replicate_2", "replicate_3"]]
+            self.mean_trace = traces.mean(axis=1).values
 
         self.base_params = base_params
         self.opt_param_indices = opt_param_indices
