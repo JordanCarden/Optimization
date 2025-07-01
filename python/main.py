@@ -52,52 +52,52 @@ def main() -> None:
     base_params = pd.read_csv("data/ground_truth_params.csv")["parameter_value"].values
 
     lower_bounds = [
-        0.0470940318,
-        0.00482725805,
-        0.101149449,
-        0.0845102567,
-        0.373637489,
-        0.00216021069,
-        0.00305100532,
-        0.000376967367,
-        0.00129482278,
-        0.00427994896,
-        0.00560767076,
-        103.341863,
-        0.00000263288502,
-        57.5797013,
-        83.592078,
-        101.59061,
-        0.000119814795,
-        0.000078378013,
-        0.00361074026,
-        0.00000160724775,
-        29.3045286,
-    ]
-    upper_bounds = [
-        470.940318,
-        48.2725805,
-        1011.49449,
-        845.102567,
-        3736.37489,
-        21.6021069,
-        30.5100532,
-        3.76967367,
-        12.9482278,
-        42.7994896,
-        56.0767076,
-        1033418.63,
-        0.0263288502,
-        575797.013,
-        835920.78,
-        1015906.1,
-        1.19814795,
-        0.78378013,
-        36.1074026,
-        0.0160724775,
-        293045.286,
+        0.065,      # params[0]: STAR/THS Txn. Rate (s⁻¹)
+        0.001,      # params[1]: TetR Translation Rate (s⁻¹)
+        0.065,      # params[2]: Y mRNA Txn. Rate (s⁻¹)
+        0.065,      # params[3]: Z (GFP) mRNA Txn. Rate (s⁻¹)
+        0.001,      # params[4]: GFP Translation Rate (s⁻¹)
+        0.0008,     # params[5]: STAR Degradation Rate (s⁻¹)
+        0.0008,     # params[6]: THS Degradation Rate (s⁻¹)
+        0.0001,     # params[7]: TetR Degradation Rate (s⁻¹)
+        0.0008,     # params[8]: Y mRNA Degradation Rate (s⁻¹)
+        0.0008,     # params[9]: Z (GFP) mRNA Degradation Rate (s⁻¹)
+        0.0001,     # params[10]: GFP "Degradation" Rate (s⁻¹)
+        1.0e1,      # params[11]: STAR-Promoter Binding ((nM·s)⁻¹)
+        1.0e-3,     # params[12]: STAR-Promoter Unbinding (s⁻¹)
+        1.0e1,      # params[13]: THS-Y mRNA Binding ((nM·s)⁻¹)
+        1.0e2,      # params[14]: TetR-DNA Binding ((nM·s)⁻¹)
+        1.0e2,      # params[15]: TetR-aTc Binding ((nM·s)⁻¹)
+        1.0e-4,     # params[16]: TetR-DNA Unbinding (s⁻¹)
+        1.0e-2,     # params[17]: TetR-aTc Unbinding (s⁻¹)
+        0.1,        # params[18]: GFP Scaling Factor (AU/nM) - Placeholder
+        0.0008,     # params[19]: Y_active Degradation (s⁻¹)
+        0.0         # params[20]: TetR-Pz_active Binding ((nM·s)⁻¹)
     ]
 
+    upper_bounds = [
+        0.5,        # params[0]: STAR/THS Txn. Rate (s⁻¹)
+        0.5,        # params[1]: TetR Translation Rate (s⁻¹)
+        0.5,        # params[2]: Y mRNA Txn. Rate (s⁻¹)
+        0.5,        # params[3]: Z (GFP) mRNA Txn. Rate (s⁻¹)
+        0.5,        # params[4]: GFP Translation Rate (s⁻¹)
+        0.004,      # params[5]: STAR Degradation Rate (s⁻¹)
+        0.004,      # params[6]: THS Degradation Rate (s⁻¹)
+        0.0004,     # params[7]: TetR Degradation Rate (s⁻¹)
+        0.004,      # params[8]: Y mRNA Degradation Rate (s⁻¹)
+        0.004,      # params[9]: Z (GFP) mRNA Degradation Rate (s⁻¹)
+        0.0004,     # params[10]: GFP "Degradation" Rate (s⁻¹)
+        1.0e6,      # params[11]: STAR-Promoter Binding ((nM·s)⁻¹)
+        1.0,        # params[12]: STAR-Promoter Unbinding (s⁻¹)
+        1.0e6,      # params[13]: THS-Y mRNA Binding ((nM·s)⁻¹)
+        1.0e4,      # params[14]: TetR-DNA Binding ((nM·s)⁻¹)
+        1.0e5,      # params[15]: TetR-aTc Binding ((nM·s)⁻¹)
+        0.1,        # params[16]: TetR-DNA Unbinding (s⁻¹)
+        1.0,        # params[17]: TetR-aTc Unbinding (s⁻¹)
+        10.0,       # params[18]: GFP Scaling Factor (AU/nM) - Placeholder
+        0.004,      # params[19]: Y_active Degradation (s⁻¹)
+        1.0e4       # params[20]: TetR-Pz_active Binding ((nM·s)⁻¹)
+    ]
 
     bounds = list(zip(lower_bounds, upper_bounds))
     opt_param_indices = list(range(len(base_params)))
@@ -160,7 +160,6 @@ def main() -> None:
     print(f"Total optimization time: {total_duration_s:.2f} seconds")
     print(f"Saved history to {output_file}")
     print(f"Best SSE found: {best_sse:.4f}")
-
 
 if __name__ == "__main__":
     main()

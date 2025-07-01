@@ -46,12 +46,12 @@ def run_cma_es(
         Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
     """
     x0 = _lhs_samples(bounds, 1, random_seed)[0]
-    sigma0 = 0.25 * np.mean([ub - lb for lb, ub in bounds])
+    sigma0 = 0.4
     popsize = 4 + int(3 * np.log(len(bounds)))
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 100000,
+        "maxfevals": 20000,
         "popsize": popsize,
         "seed": random_seed,
         "tolfun": 0,
@@ -122,7 +122,7 @@ def run_lshade(
 
     var = FloatVar(lb=tuple(lower), ub=tuple(upper), name="param")
 
-    budget = 5000
+    budget = 20000
     calls = 0
 
     def wrapped(x: np.ndarray) -> float:
@@ -191,7 +191,7 @@ def run_pso(
 
     cost, pos = optimizer.optimize(
         _swarm_objective,
-        iters=100,
+        iters=400,
         verbose=False,
     )
 
@@ -218,9 +218,8 @@ def run_direct(
     result = direct(
         func=objective_tracker.evaluate,
         bounds=bounds,
-        maxfun=5000,
+        maxfun=20000,
         locally_biased=False,
-        eps=10
     )
 
     return np.array(result.x), float(result.fun)
