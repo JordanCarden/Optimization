@@ -8,7 +8,7 @@ def apply_composite_noise(
     b: float = 1.0,
     rho: float = 0.007,
     sigma_delta: float = 0.1,
-    drift_slope: float = 0.01
+    drift_slope: float = 0.01,
 ):
     """Apply composite noise model to a simulated trace.
 

@@ -19,17 +19,14 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
     Returns:
-        argparse.Namespace: Parsed arguments for optimizer selection,
-        seed, and dataset number.
+        argparse.Namespace: Parsed optimizer choice, seed, and dataset number.
     """
     parser = argparse.ArgumentParser(description="Run optimization routine")
     parser.add_argument(
         "--optimizer",
         choices=["cmaes", "bo", "lshade", "pso", "direct"],
         default="cmaes",
-        help=(
-            "Which optimizer to use (cmaes, bo, lshade, pso, or direct)"
-        ),
+        help=("Which optimizer to use (cmaes, bo, lshade, pso, or direct)"),
     )
     parser.add_argument(
         "--seed",
@@ -47,22 +44,60 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    """Run optimization and save evaluation history."""
+    """Run the selected optimization routine and save the evaluation history."""
     args = parse_args()
 
     total_run_start_time = time.time()
 
-    base_params = pd.read_csv(
-        'data/ground_truth_params.csv'
-    )['parameter_value'].values
+    base_params = pd.read_csv("data/ground_truth_params.csv")["parameter_value"].values
 
     lower_bounds = [
-
+        0.0005,      # params[0]: STAR/THS Txn. Rate (s⁻¹)
+        0.0005,      # params[1]: TetR Translation Rate (s⁻¹)
+        0.0005,      # params[2]: Y mRNA Txn. Rate (s⁻¹)
+        0.0005,      # params[3]: Z (GFP) mRNA Txn. Rate (s⁻¹)
+        0.0005,      # params[4]: GFP Translation Rate (s⁻¹)
+        0.0001,      # params[5]: STAR Degradation Rate (s⁻¹)
+        0.0001,      # params[6]: THS Degradation Rate (s⁻¹)
+        0.00005,     # params[7]: TetR Degradation Rate (s⁻¹)
+        0.0001,      # params[8]: Y mRNA Degradation Rate (s⁻¹)
+        0.0001,      # params[9]: Z (GFP) mRNA Degradation Rate (s⁻¹)
+        0.00005,     # params[10]: GFP "Degradation" Rate (s⁻¹)
+        100,         # params[11]: STAR-Promoter Binding ((nM·s)⁻¹)
+        0.00000001,  # params[12]: STAR-Promoter Unbinding (s⁻¹)
+        100,         # params[13]: THS-Y mRNA Binding ((nM·s)⁻¹)
+        100,         # params[14]: TetR-DNA Binding ((nM·s)⁻¹)
+        100,         # params[15]: TetR-aTc Binding ((nM·s)⁻¹)
+        0.00000001,  # params[16]: TetR-DNA Unbinding (s⁻¹)
+        0.00000001,  # params[17]: TetR-aTc Unbinding (s⁻¹)
+        0.5,         # params[18]: GFP Scaling Factor (AU/nM)
+        0.0001,      # params[19]: Y_active Degradation (s⁻¹)
+        100          # params[20]: TetR-Pz_active Binding ((nM·s)⁻¹)
     ]
     upper_bounds = [
-
+        0.5,         # params[0]: STAR/THS Txn. Rate (s⁻¹)
+        0.5,         # params[1]: TetR Translation Rate (s⁻¹)
+        0.5,         # params[2]: Y mRNA Txn. Rate (s⁻¹)
+        0.5,         # params[3]: Z (GFP) mRNA Txn. Rate (s⁻¹)
+        0.5,         # params[4]: GFP Translation Rate (s⁻¹)
+        0.01,        # params[5]: STAR Degradation Rate (s⁻¹)
+        0.01,        # params[6]: THS Degradation Rate (s⁻¹)
+        0.01,        # params[7]: TetR Degradation Rate (s⁻¹)
+        0.01,        # params[8]: Y mRNA Degradation Rate (s⁻¹)
+        0.01,        # params[9]: Z (GFP) mRNA Degradation Rate (s⁻¹)
+        0.01,        # params[10]: GFP "Degradation" Rate (s⁻¹)
+        1000000,     # params[11]: STAR-Promoter Binding ((nM·s)⁻¹)
+        0.00001,     # params[12]: STAR-Promoter Unbinding (s⁻¹)
+        1000000,     # params[13]: THS-Y mRNA Binding ((nM·s)⁻¹)
+        1000000,     # params[14]: TetR-DNA Binding ((nM·s)⁻¹)
+        1000000,     # params[15]: TetR-aTc Binding ((nM·s)⁻¹)
+        0.00001,     # params[16]: TetR-DNA Unbinding (s⁻¹)
+        0.00001,     # params[17]: TetR-aTc Unbinding (s⁻¹)
+        5,           # params[18]: GFP Scaling Factor (AU/nM)
+        0.01,        # params[19]: Y_active Degradation (s⁻¹)
+        1000000      # params[20]: TetR-Pz_active Binding ((nM·s)⁻¹)
     ]
-    
+
     bounds = list(zip(lower_bounds, upper_bounds))
     opt_param_indices = list(range(len(base_params)))
     opt_bounds = [bounds[i] for i in opt_param_indices]
@@ -112,10 +147,10 @@ def main() -> None:
     final_params = base_params.copy()
     final_params[opt_param_indices] = best_solution
 
-    if not os.path.exists('results'):
-        os.makedirs('results')
+    if not os.path.exists("results"):
+        os.makedirs("results")
     history_df = pd.DataFrame(objective.history)
-    history_df.to_csv(output_file, index=False, float_format='%.8f')
+    history_df.to_csv(output_file, index=False, float_format="%.8f")
 
     total_run_end_time = time.time()
     total_duration_s = total_run_end_time - total_run_start_time
@@ -128,3 +163,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

@@ -1,8 +1,4 @@
-"""Optimization utilities for running optimization algorithms.
-
-This module provides wrappers for several optimizers configured for the
-21-dimensional parameter space used throughout the repository.
-"""
+"""Wrappers for the optimization algorithms used throughout the repository."""
 
 from __future__ import annotations
 
@@ -17,7 +13,16 @@ from objective_function import ObjectiveTracker
 def _lhs_samples(
     bounds: list[tuple[float, float]], n_samples: int, seed: int
 ) -> np.ndarray:
-    """Return Latin Hypercube samples within the given bounds."""
+    """Generate Latin Hypercube samples.
+
+    Args:
+        bounds: List of ``(lower, upper)`` tuples for each dimension.
+        n_samples: Number of points to sample.
+        seed: Random seed for the sampler.
+
+    Returns:
+        Array of shape ``(n_samples, len(bounds))`` with sampled points.
+    """
     sampler = qmc.LatinHypercube(d=len(bounds), seed=seed)
     sample = sampler.random(n=n_samples)
     lower = np.array([b[0] for b in bounds])
@@ -34,11 +39,11 @@ def run_cma_es(
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
-        bounds: Sequence of (lower, upper) bounds for each parameter.
+        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
         random_seed: Seed for the CMA-ES optimizer.
 
     Returns:
-        Tuple of best-found parameter vector and its SSE value.
+        Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
     """
     x0 = _lhs_samples(bounds, 1, random_seed)[0]
     sigma0 = 0.25 * np.mean([ub - lb for lb, ub in bounds])
@@ -46,13 +51,13 @@ def run_cma_es(
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 100000,
+        "maxfevals": 50000,
         "popsize": popsize,
         "seed": random_seed,
         "tolfun": 0,
         "tolx": 0,
         "tolstagnation": 0,
-        "verb_log": 0
+        "verb_log": 0,
     }
 
     solution, es = cma.fmin2(
@@ -78,15 +83,16 @@ def run_bayesian_optimization(
         random_seed: Seed for the optimizer.
 
     Returns:
-        Tuple of best-found parameter vector and its SSE value.
+        Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
     """
     result = gp_minimize(
         func=objective_tracker.evaluate,
         dimensions=bounds,
-        n_calls=100,
-        n_initial_points=30,
+        n_calls=2100,
+        n_initial_points=210,
         initial_point_generator="lhs",
-        acq_func="gp_hedge",
+        acq_func="EI",
+        base_estimator="ET",
         random_state=random_seed,
     )
 
@@ -98,7 +104,16 @@ def run_lshade(
     bounds: list[tuple[float, float]],
     random_seed: int,
 ) -> tuple[np.ndarray, float]:
-    """Run the L-SHADE algorithm with a 100k evaluation budget."""
+    """Run the L-SHADE algorithm with a 5k evaluation budget.
+
+    Args:
+        objective_tracker: Tracker providing the evaluate method.
+        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        random_seed: Seed for the optimizer.
+
+    Returns:
+        Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
+    """
     from mealpy import FloatVar
     from mealpy.evolutionary_based.SHADE import L_SHADE
 
@@ -107,7 +122,7 @@ def run_lshade(
 
     var = FloatVar(lb=tuple(lower), ub=tuple(upper), name="param")
 
-    budget = 100000
+    budget = 50000
     calls = 0
 
     def wrapped(x: np.ndarray) -> float:
@@ -141,7 +156,16 @@ def run_pso(
     bounds: list[tuple[float, float]],
     random_seed: int,
 ) -> tuple[np.ndarray, float]:
-    """Run Particle Swarm Optimization with inertia weight scheduling."""
+    """Run Particle Swarm Optimization with Clerc constriction parameters.
+
+    Args:
+        objective_tracker: Tracker providing the evaluate method.
+        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        random_seed: Seed for the optimizer.
+
+    Returns:
+        Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
+    """
     import pyswarms as ps
 
     np.random.seed(random_seed)
@@ -149,7 +173,7 @@ def run_pso(
     upper = np.array([b[1] for b in bounds])
     init_pos = _lhs_samples(bounds, 50, random_seed)
 
-    options = {"c1": 0.5, "c2": 0.3, "w": 0.9}
+    options = {"c1": 1.49445, "c2": 1.49445, "w": 0.729}
     optimizer = ps.single.GlobalBestPSO(
         n_particles=50,
         dimensions=len(bounds),
@@ -165,19 +189,13 @@ def run_pso(
             costs[idx] = objective_tracker.evaluate(particle)
         return costs
 
-    best_cost = np.inf
-    best_pos = None
-    for i in range(2000):
-        optimizer.options["w"] = 0.9 - 0.5 * (i / 1999)
-        cost, pos = optimizer.optimize(
-            _swarm_objective,
-            iters=1,
-            verbose=False,
-        )
-        if cost < best_cost:
-            best_cost, best_pos = cost, pos
+    cost, pos = optimizer.optimize(
+        _swarm_objective,
+        iters=400,
+        verbose=False,
+    )
 
-    return np.array(best_pos), float(best_cost)
+    return np.array(pos), float(cost)
 
 
 def run_direct(
@@ -185,13 +203,22 @@ def run_direct(
     bounds: list[tuple[float, float]],
     random_seed: int,
 ) -> tuple[np.ndarray, float]:
-    """Run the DIRECT global optimization algorithm."""
+    """Run the DIRECT global optimization algorithm.
+
+    Args:
+        objective_tracker: Tracker providing the evaluate method.
+        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        random_seed: Seed for the optimizer.
+
+    Returns:
+        Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
+    """
     from scipy.optimize import direct
 
     result = direct(
         func=objective_tracker.evaluate,
         bounds=bounds,
-        maxfun=100000,
+        maxfun=20000,
         locally_biased=False,
     )
 
