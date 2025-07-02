@@ -51,7 +51,7 @@ def run_cma_es(
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 50000,
+        "maxfevals": 20000,
         "popsize": popsize,
         "seed": random_seed,
         "tolfun": 0,
@@ -122,7 +122,7 @@ def run_lshade(
 
     var = FloatVar(lb=tuple(lower), ub=tuple(upper), name="param")
 
-    budget = 50000
+    budget = 20000
     calls = 0
 
     def wrapped(x: np.ndarray) -> float:
@@ -171,7 +171,7 @@ def run_pso(
     np.random.seed(random_seed)
     lower = np.array([b[0] for b in bounds])
     upper = np.array([b[1] for b in bounds])
-    init_pos = _lhs_samples(bounds, 50, random_seed)
+    init_pos = _lhs_samples(bounds, 100, random_seed)
 
     options = {"c1": 1.49445, "c2": 1.49445, "w": 0.729}
     optimizer = ps.single.GlobalBestPSO(
