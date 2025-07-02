@@ -46,12 +46,12 @@ def run_cma_es(
         Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
     """
     x0 = _lhs_samples(bounds, 1, random_seed)[0]
-    sigma0 = 0.4
+    sigma0 = 0.25 * np.mean([ub - lb for lb, ub in bounds])
     popsize = 4 + int(3 * np.log(len(bounds)))
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 20000,
+        "maxfevals": 50000,
         "popsize": popsize,
         "seed": random_seed,
         "tolfun": 0,
@@ -122,7 +122,7 @@ def run_lshade(
 
     var = FloatVar(lb=tuple(lower), ub=tuple(upper), name="param")
 
-    budget = 20000
+    budget = 50000
     calls = 0
 
     def wrapped(x: np.ndarray) -> float:

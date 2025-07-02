@@ -52,10 +52,10 @@ def main() -> None:
     base_params = pd.read_csv("data/ground_truth_params.csv")["parameter_value"].values
 
     lower_bounds = [
-        0.065,      # params[0]: STAR/THS Txn. Rate (s⁻¹)
+        0.001,      # params[0]: STAR/THS Txn. Rate (s⁻¹)
         0.001,      # params[1]: TetR Translation Rate (s⁻¹)
-        0.065,      # params[2]: Y mRNA Txn. Rate (s⁻¹)
-        0.065,      # params[3]: Z (GFP) mRNA Txn. Rate (s⁻¹)
+        0.001,      # params[2]: Y mRNA Txn. Rate (s⁻¹)
+        0.001,      # params[3]: Z (GFP) mRNA Txn. Rate (s⁻¹)
         0.001,      # params[4]: GFP Translation Rate (s⁻¹)
         0.0008,     # params[5]: STAR Degradation Rate (s⁻¹)
         0.0008,     # params[6]: THS Degradation Rate (s⁻¹)
