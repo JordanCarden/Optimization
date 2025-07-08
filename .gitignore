@@ -18,7 +18,6 @@ ENV/
 Thumbs.db
 
 # Project specific
-plots/*
 !plots/.gitkeep
 results/
 synthetic_data/
