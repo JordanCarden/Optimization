@@ -51,7 +51,7 @@ def run_cma_es(
 
     options = {
         "bounds": [[b[0] for b in bounds], [b[1] for b in bounds]],
-        "maxfevals": 20000,
+        "maxfevals": 21000,
         "popsize": popsize,
         "seed": random_seed,
         "tolfun": 0,
@@ -88,7 +88,7 @@ def run_bayesian_optimization(
     result = gp_minimize(
         func=objective_tracker.evaluate,
         dimensions=bounds,
-        n_calls=2100,
+        n_calls=21000,
         n_initial_points=210,
         initial_point_generator="lhs",
         acq_func="EI",
@@ -122,7 +122,7 @@ def run_lshade(
 
     var = FloatVar(lb=tuple(lower), ub=tuple(upper), name="param")
 
-    budget = 20000
+    budget = 21000
     calls = 0
 
     def wrapped(x: np.ndarray) -> float:
@@ -171,7 +171,7 @@ def run_pso(
     np.random.seed(random_seed)
     lower = np.array([b[0] for b in bounds])
     upper = np.array([b[1] for b in bounds])
-    init_pos = _lhs_samples(bounds, 100, random_seed)
+    init_pos = _lhs_samples(bounds, 50, random_seed)
 
     options = {"c1": 1.49445, "c2": 1.49445, "w": 0.729}
     optimizer = ps.single.GlobalBestPSO(
@@ -191,7 +191,7 @@ def run_pso(
 
     cost, pos = optimizer.optimize(
         _swarm_objective,
-        iters=400,
+        iters=420,
         verbose=False,
     )
 
@@ -218,7 +218,7 @@ def run_direct(
     result = direct(
         func=objective_tracker.evaluate,
         bounds=bounds,
-        maxfun=20000,
+        maxfun=21000,
         locally_biased=False,
     )
 
