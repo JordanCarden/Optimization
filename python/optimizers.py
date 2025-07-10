@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import cma
 import numpy as np
+from scipy.optimize import basinhopping, dual_annealing
 from scipy.stats import qmc
-from skopt import gp_minimize
 
 from objective_function import ObjectiveTracker
 
@@ -68,35 +68,6 @@ def run_cma_es(
     )
 
     return solution, es.best.f
-
-
-def run_bayesian_optimization(
-    objective_tracker: ObjectiveTracker,
-    bounds: list[tuple[float, float]],
-    random_seed: int,
-) -> tuple[np.ndarray, float]:
-    """Run Bayesian Optimization using scikit-optimize.
-
-    Args:
-        objective_tracker: Tracker providing the evaluate method.
-        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
-        random_seed: Seed for the optimizer.
-
-    Returns:
-        Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
-    """
-    result = gp_minimize(
-        func=objective_tracker.evaluate,
-        dimensions=bounds,
-        n_calls=21000,
-        n_initial_points=210,
-        initial_point_generator="lhs",
-        acq_func="EI",
-        base_estimator="ET",
-        random_state=random_seed,
-    )
-
-    return np.array(result.x), float(result.fun)
 
 
 def run_lshade(
@@ -198,12 +169,12 @@ def run_pso(
     return np.array(pos), float(cost)
 
 
-def run_direct(
+def run_dual_annealing(
     objective_tracker: ObjectiveTracker,
     bounds: list[tuple[float, float]],
     random_seed: int,
 ) -> tuple[np.ndarray, float]:
-    """Run the DIRECT global optimization algorithm.
+    """Run Dual Annealing global optimization.
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
@@ -213,13 +184,54 @@ def run_direct(
     Returns:
         Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
     """
-    from scipy.optimize import direct
+    x0 = _lhs_samples(bounds, 1, random_seed)[0]
 
-    result = direct(
+    result = dual_annealing(
         func=objective_tracker.evaluate,
         bounds=bounds,
+        seed=random_seed,
         maxfun=21000,
-        locally_biased=False,
+        x0=x0,
     )
+
+    return np.array(result.x), float(result.fun)
+
+
+def run_basin_hopping(
+    objective_tracker: ObjectiveTracker,
+    bounds: list[tuple[float, float]],
+    random_seed: int,
+) -> tuple[np.ndarray, float]:
+    """Run Basin-Hopping with L-BFGS-B local search.
+
+    Args:
+        objective_tracker: Tracker providing the evaluate method.
+        bounds: Sequence of ``(lower, upper)`` bounds for each parameter.
+        random_seed: Seed for the optimizer.
+
+    Returns:
+        Tuple ``(best_params, best_sse)`` with the optimal parameters and SSE.
+    """
+    minimizer_kwargs = {
+        "method": "L-BFGS-B",
+        "bounds": bounds,
+        "options": {"maxiter": 100},
+    }
+
+    x0 = _lhs_samples(bounds, 1, random_seed)[0]
+
+    try:
+        result = basinhopping(
+            func=objective_tracker.evaluate,
+            x0=x0,
+            niter=420,
+            seed=random_seed,
+            minimizer_kwargs=minimizer_kwargs,
+        )
+    except RuntimeError:
+        best_idx = int(np.argmin([h["sse"] for h in objective_tracker.history]))
+        best_params = objective_tracker.history[best_idx]["params"]
+        best_sse = objective_tracker.history[best_idx]["sse"]
+        return np.array(best_params), float(best_sse)
 
     return np.array(result.x), float(result.fun)

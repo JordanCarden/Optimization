@@ -7,11 +7,11 @@ import pandas as pd
 
 from objective_function import ObjectiveTracker
 from optimizers import (
-    run_bayesian_optimization,
     run_cma_es,
     run_lshade,
     run_pso,
-    run_direct,
+    run_dual_annealing,
+    run_basin_hopping,
 )
 
 
@@ -24,9 +24,18 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run optimization routine")
     parser.add_argument(
         "--optimizer",
-        choices=["cmaes", "bo", "lshade", "pso", "direct"],
+        choices=[
+            "cmaes",
+            "lshade",
+            "pso",
+            "dual_annealing",
+            "basin_hopping",
+        ],
         default="cmaes",
-        help=("Which optimizer to use (cmaes, bo, lshade, pso, or direct)"),
+        help=(
+            "Which optimizer to use (cmaes, lshade, pso, dual_annealing, or"
+            " basin_hopping)"
+        ),
     )
     parser.add_argument(
         "--seed",
@@ -113,13 +122,7 @@ def main() -> None:
         base_params=base_params,
         opt_param_indices=opt_param_indices,
     )
-    if args.optimizer == "bo":
-        best_solution, best_sse = run_bayesian_optimization(
-            objective_tracker=objective,
-            bounds=opt_bounds,
-            random_seed=args.seed,
-        )
-    elif args.optimizer == "cmaes":
+    if args.optimizer == "cmaes":
         best_solution, best_sse = run_cma_es(
             objective_tracker=objective,
             bounds=opt_bounds,
@@ -137,8 +140,14 @@ def main() -> None:
             bounds=opt_bounds,
             random_seed=args.seed,
         )
+    elif args.optimizer == "dual_annealing":
+        best_solution, best_sse = run_dual_annealing(
+            objective_tracker=objective,
+            bounds=opt_bounds,
+            random_seed=args.seed,
+        )
     else:
-        best_solution, best_sse = run_direct(
+        best_solution, best_sse = run_basin_hopping(
             objective_tracker=objective,
             bounds=opt_bounds,
             random_seed=args.seed,

@@ -31,6 +31,24 @@ do
   done
 done
 
+echo "--- Launching Dual Annealing tasks ---"
+for dataset in 1 2 3
+do
+  for seed in {1..10}
+  do
+    srun --exclusive --ntasks=1 $VENV_PYTHON python/main.py --optimizer dual_annealing --dataset $dataset --seed $seed &
+  done
+done
+
+echo "--- Launching Basin-Hopping tasks ---"
+for dataset in 1 2 3
+do
+  for seed in {1..10}
+  do
+    srun --exclusive --ntasks=1 $VENV_PYTHON python/main.py --optimizer basin_hopping --dataset $dataset --seed $seed &
+  done
+done
+
 wait
 
 echo "Job finished at $(date)"
