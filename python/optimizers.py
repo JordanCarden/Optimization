@@ -174,7 +174,7 @@ def run_dual_annealing(
     bounds: list[tuple[float, float]],
     random_seed: int,
 ) -> tuple[np.ndarray, float]:
-    """Run Dual Annealing global optimization.
+    """Run Dual Annealing global optimization with an evaluation budget.
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
@@ -186,13 +186,29 @@ def run_dual_annealing(
     """
     x0 = _lhs_samples(bounds, 1, random_seed)[0]
 
-    result = dual_annealing(
-        func=objective_tracker.evaluate,
-        bounds=bounds,
-        seed=random_seed,
-        maxfun=21000,
-        x0=x0,
-    )
+    budget = 21000
+    calls = 0
+
+    def wrapped(x: np.ndarray) -> float:
+        nonlocal calls
+        if calls >= budget:
+            raise StopIteration("Evaluation budget reached")
+        calls += 1
+        return objective_tracker.evaluate(x)
+
+    try:
+        result = dual_annealing(
+            func=wrapped,
+            bounds=bounds,
+            seed=random_seed,
+            maxfun=budget,
+            x0=x0,
+        )
+    except StopIteration:
+        best_idx = int(np.argmin([h["sse"] for h in objective_tracker.history]))
+        best_params = objective_tracker.history[best_idx]["params"]
+        best_sse = objective_tracker.history[best_idx]["sse"]
+        return np.array(best_params), float(best_sse)
 
     return np.array(result.x), float(result.fun)
 
