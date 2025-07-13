@@ -1,36 +1,24 @@
 #!/bin/bash
 
-#SBATCH --job-name=dual_optimizer_run
-#SBATCH --output=logs/run_%j.txt
-#SBATCH --error=logs/run_%j.txt
+#SBATCH --job-name=experimental_fit_run
+#SBATCH --output=logs/exp_fit_%j.txt
+#SBATCH --error=logs/exp_fit_%j.txt
 #SBATCH --nodes=1
 #SBATCH --ntasks=60
 #SBATCH --time=24:00:00
 #SBATCH -p workq
-#SBATCH -A hpc_hpc_tyw_01
+#SBATCH -A hpc_hpcsuvo02
 
-echo "Job started on $(hostname) at $(date)"
+VENV_PYTHON="/work/jcarde7/Optimization/venv/bin/python3"
 
-VENV_PYTHON="/work/jcarde7/Optimize2/venv/bin/python3"
+OPTIMIZERS=("cmaes" "lshade" "pso" "dual_annealing" "basin_hopping")
 
-echo "--- Launching CMA-ES tasks ---"
-for dataset in 1 2 3
+for optimizer in "${OPTIMIZERS[@]}"
 do
-  for seed in {1..10}
+  for seed in {2..13}
   do
-    srun --exclusive --ntasks=1 $VENV_PYTHON python/main.py --optimizer cmaes --dataset $dataset --seed $seed &
-  done
-done
-
-echo "--- Launching LSHADE tasks ---"
-for dataset in 1 2 3
-do
-  for seed in {1..10}
-  do
-    srun --exclusive --ntasks=1 $VENV_PYTHON python/main.py --optimizer lshade --dataset $dataset --seed $seed &
+    srun --exclusive --ntasks=1 $VENV_PYTHON python/fit_experimental.py --optimizer $optimizer --seed $seed &
   done
 done
 
 wait
-
-echo "Job finished at $(date)"

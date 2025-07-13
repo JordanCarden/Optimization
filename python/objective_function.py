@@ -20,8 +20,6 @@ class ObjectiveTracker:
     def __init__(
         self,
         dataset_path: str | None,
-        base_params: np.ndarray,
-        opt_param_indices: np.ndarray,
         mean_trace: np.ndarray | None = None,
     ) -> None:
         """Initialize the tracker and load the dataset.
@@ -34,8 +32,6 @@ class ObjectiveTracker:
         Args:
             dataset_path: Path to the CSV dataset file. Ignored if
                 ``mean_trace`` is provided.
-            base_params: Base parameter values.
-            opt_param_indices: Indices of parameters to optimize.
             mean_trace: Pre-computed mean trace. If provided, ``dataset_path``
                 is ignored.
         """
@@ -48,9 +44,6 @@ class ObjectiveTracker:
             traces = dataset[["replicate_1", "replicate_2", "replicate_3"]]
             self.mean_trace = traces.mean(axis=1).values
 
-        self.base_params = base_params
-        self.opt_param_indices = opt_param_indices
-
         self.call_count = 0
         self.history = []
         self.start_time = time.time()
@@ -59,20 +52,18 @@ class ObjectiveTracker:
         """Compute SSE for a given parameter vector.
 
         Args:
-            x: Parameter values to substitute into the base parameters.
+            x: A complete vector of parameter values for the simulation.
 
         Returns:
             float: Sum of squared errors between observed data and the
             simulated trace.
         """
-        if self.call_count >= 110000:
+        if self.call_count >= 22000:
             raise RuntimeError("Evaluation budget exceeded")
 
         self.call_count += 1
 
-        params_to_sim = self.base_params.copy()
-        params_to_sim[self.opt_param_indices] = x
-
+        params_to_sim = x
         simulated = simulate_variant_response(
             params=params_to_sim,
             model_params=MODEL_PARAMS,
@@ -83,9 +74,8 @@ class ObjectiveTracker:
             sse = 1e12
         else:
             sse = np.sum((self.mean_trace - simulated) ** 2)
-
+            
         elapsed_seconds = time.time() - self.start_time
-
         self.history.append(
             {
                 "params": [float(p) for p in x],
@@ -97,4 +87,5 @@ class ObjectiveTracker:
         print(
             f"Call: {self.call_count}, SSE: {sse:.4f}, " f"Time: {elapsed_seconds:.2f}s"
         )
+
         return sse
