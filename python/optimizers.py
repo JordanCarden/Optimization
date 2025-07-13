@@ -174,7 +174,7 @@ def run_dual_annealing(
     bounds: list[tuple[float, float]],
     random_seed: int,
 ) -> tuple[np.ndarray, float]:
-    """Run Dual Annealing global optimization with an evaluation budget.
+    """Run Dual Annealing global optimization.
 
     Args:
         objective_tracker: Tracker providing the evaluate method.
