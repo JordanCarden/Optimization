@@ -16,7 +16,7 @@ def plot_with_experimental_data() -> None:
     aav_exp_trace = mat_data["AAV"].ravel()
 
     for i in range(1, NUM_DATASETS + 1):
-        file_path = os.path.join(DATA_DIR, f"dataset_{i}.csv")
+        file_path = os.path.join(DATA_DIR, f"dual_annealing_{i}.csv")
         df = pd.read_csv(file_path)
         time_axis = df["time_min"]
 
