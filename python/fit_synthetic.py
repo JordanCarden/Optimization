@@ -19,7 +19,7 @@ def parse_args() -> argparse.Namespace:
     """Parse command-line arguments.
 
     Returns:
-        argparse.Namespace: Parsed optimizer choice, seed, and dataset number.
+        argparse.Namespace: Parsed optimizer choice, seed, and dataset name.
     """
     parser = argparse.ArgumentParser(description="Run optimization routine")
     parser.add_argument(
@@ -45,9 +45,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--dataset",
-        type=int,
-        default=1,
-        help="Dataset number to optimize on",
+        type=str,
+        default="cmaes_1",
+        help="Name of the dataset file to optimize on (e.g., 'cmaes_1')",
     )
     return parser.parse_args()
 
@@ -107,10 +107,10 @@ def main() -> None:
 
     bounds = list(zip(lower_bounds, upper_bounds))
 
-    dataset_path = f"data/dataset_{args.dataset}.csv"
+    dataset_path = f"data/{args.dataset}.csv"
     output_file = (
         f"results/{args.optimizer}_history_"
-        f"dataset_{args.dataset}_run_{args.seed}.csv"
+        f"{args.dataset}_run_{args.seed}.csv"
     )
 
     objective = ObjectiveTracker(
