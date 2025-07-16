@@ -19,5 +19,5 @@ Thumbs.db
 
 # Project specific
 !plots/.gitkeep
-results/
-synthetic_data/
+synthetic_results/
+experimental_results/
