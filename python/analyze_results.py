@@ -2,16 +2,13 @@ import os
 import pandas as pd
 import re
 
-def aggregate_results():
+def aggregate_results_with_params():
     """
-    Aggregates results from all optimization runs into a single CSV file.
-
-    This script processes all CSV files in the 'results' directory. For each file,
-    it extracts the optimizer name, the dataset used, the run seed, and the
-    minimum SSE achieved. The aggregated data is saved to 'results_summary.csv'.
+    Aggregates results from all optimization runs into a single CSV file,
+    including the parameter set associated with the best SSE for each run.
     """
     results_dir = "results"
-    output_file = "results_summary.csv"
+    output_file = "results_summary_with_params.csv"
     
     all_results = []
     
@@ -43,14 +40,18 @@ def aggregate_results():
             if df.empty:
                 print(f"Warning: Empty file {filename}")
                 min_sse = float('nan')
+                best_params = "[]"
             else:
-                min_sse = df['sse'].min()
+                best_run = df.loc[df['sse'].idxmin()]
+                min_sse = best_run['sse']
+                best_params = best_run['params']
             
             all_results.append({
                 "optimizer": optimizer,
                 "dataset": dataset,
                 "seed": seed,
-                "min_sse": min_sse
+                "min_sse": min_sse,
+                "params": best_params
             })
         except Exception as e:
             print(f"Error processing {filename}: {e}")
@@ -59,7 +60,7 @@ def aggregate_results():
     summary_df.to_csv(output_file, index=False)
     
     print(f"\nSuccessfully aggregated {len(all_results)} result files.")
-    print(f"Summary saved to {output_file}")
+    print(f"Summary with parameters saved to {output_file}")
 
 if __name__ == "__main__":
-    aggregate_results()
+    aggregate_results_with_params()
