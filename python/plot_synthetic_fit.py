@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import numpy as np
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -38,8 +39,8 @@ def plot_synthetic_swarm() -> None:
     COLOR_MAP = dict(zip(ALGORITHMS, CUSTOM_COLORS))
 
     # Compute sorted optimizers by overall median RMSE (ascending)
-    medians = df.groupby("optimizer")["rmse"].median().sort_values()
-    sorted_optimizers = medians.index.tolist()
+    overall_medians = df.groupby("optimizer")["rmse"].median().sort_values()
+    sorted_optimizers = overall_medians.index.tolist()
 
     fig, axes = plt.subplots(2, 3, figsize=(20, 12), sharey=True)
     ax_list = axes.flatten()
@@ -53,10 +54,15 @@ def plot_synthetic_swarm() -> None:
     ax_list[0].set_ylabel("RMSE")
     ax_list[0].set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in sorted_optimizers])
     ax_list[0].legend().remove()  # Remove legend since colors match x-axis
+    for i, opt in enumerate(sorted_optimizers):
+        median_val = overall_medians[opt]
+        ax_list[0].text(i + 0.15, median_val, f'{median_val:.3f}', ha='left', va='center', fontsize=10, color='black')
 
     # Per-category plots
-    for ax, category in zip(ax_list[1:], categories):
+    for ax_idx, category in enumerate(categories, start=1):
+        ax = ax_list[ax_idx]
         subset = df[df["category"] == category]
+        subset_medians = subset.groupby("optimizer")["rmse"].median()
         sns.boxplot(ax=ax, data=subset, x="optimizer", y="rmse", order=sorted_optimizers, color="lightgray", width=0.3, fliersize=0)
         sns.swarmplot(ax=ax, data=subset, x="optimizer", y="rmse", hue="optimizer",
                       palette=COLOR_MAP, order=sorted_optimizers, size=5)
@@ -65,6 +71,10 @@ def plot_synthetic_swarm() -> None:
         ax.set_ylabel("RMSE")
         ax.set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in sorted_optimizers])
         ax.legend().remove()  # Remove legend
+        for i, opt in enumerate(sorted_optimizers):
+            median_val = subset_medians.get(opt, np.nan)
+            if not np.isnan(median_val):
+                ax.text(i + 0.15, median_val, f'{median_val:.3f}', ha='left', va='center', fontsize=10, color='black')
 
     for ax in ax_list:
         ax.tick_params(axis="x", rotation=45)
