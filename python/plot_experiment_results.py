@@ -1,5 +1,3 @@
-"""Plot optimizer performance and best model fits."""
-
 from __future__ import annotations
 
 import os
@@ -74,35 +72,42 @@ def plot_box_swarm() -> None:
     df = _load_best_sse_by_algorithm(len(exp_trace))
 
     display_color_map = {DISPLAY_NAMES[algo]: color for algo, color in COLOR_MAP.items()}
-    display_order = [DISPLAY_NAMES[algo] for algo in ALGORITHMS]
 
-    plt.figure(figsize=(10, 7))
+    # Compute sorted algorithms by median RMSE (ascending)
+    medians = df.groupby("algorithm")["rmse"].median().sort_values()
+    sorted_algorithms = medians.index.tolist()
 
-    # Draw the colored box plot first
+    plt.figure(figsize=(10, 6))
+
+    # Draw the gray box plot first
     sns.boxplot(
         data=df,
         x="algorithm",
         y="rmse",
-        palette=display_color_map,
-        order=display_order,
-        showfliers=False, # The swarm plot will show all points, so hide outlier fliers
+        order=sorted_algorithms,
+        color="lightgray",
+        width=0.3,
+        fliersize=0,
     )
 
-    # Overlay the swarm plot with black points
+    # Overlay the swarm plot with colored points
     sns.swarmplot(
         data=df,
         x="algorithm",
         y="rmse",
-        color="black",
-        order=display_order,
-        size=5, # Increased point size for better visibility with boxes
+        hue="algorithm",
+        palette=display_color_map,
+        order=sorted_algorithms,
+        size=5,
     )
 
     plt.xlabel("Optimizer")
     plt.ylabel("RMSE (AU)")
     plt.title("Distribution of Best RMSE Across 13 Runs on AAV Experimental Data")
+    plt.xticks(rotation=45)
+    plt.legend().remove()  # Remove legend since colors match x-axis
     plt.tight_layout()
-    plt.savefig(os.path.join("plots", "rmse_box_swarm_plot.png"), dpi=300)
+    plt.savefig(os.path.join("plots", "rmse_exp.png"), dpi=300)
     plt.close()
 
 
@@ -112,8 +117,7 @@ def plot_best_fits() -> None:
     time_min = np.arange(0, 420 + 10, 10)
 
     rmse_values: Dict[str, float] = {}
-    plt.figure(figsize=(10, 6))
-    plt.plot(time_min, exp_trace, "o", color="black", label="Experimental")
+    sims: Dict[str, np.ndarray] = {}
 
     for algo in ALGORITHMS:
         params = _load_parameters(f"{algo}_best_params.csv")
@@ -121,13 +125,24 @@ def plot_best_fits() -> None:
             params=params, model_params=MODEL_PARAMS, variant=VARIANT
         )
         display_name = DISPLAY_NAMES[algo]
-        plt.plot(time_min, sim, label=display_name, color=COLOR_MAP[algo], linewidth=2.5)
         rmse = float(np.sqrt(np.mean((exp_trace - sim) ** 2)))
         rmse_values[display_name] = rmse
+        sims[display_name] = sim
 
-    display_order = [DISPLAY_NAMES[algo] for algo in ALGORITHMS]
+    # Sort by RMSE ascending
+    sorted_items = sorted(rmse_values.items(), key=lambda x: x[1])
+    sorted_names = [name for name, _ in sorted_items]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(time_min, exp_trace, "o", color="black", label="Experimental")
+
+    for name in sorted_names:
+        sim = sims[name]
+        algo = [k for k, v in DISPLAY_NAMES.items() if v == name][0]
+        plt.plot(time_min, sim, label=name, color=COLOR_MAP[algo], linewidth=2.5)
+
     rmse_text = "RMSE\n" + "\n".join(
-        f"{name}: {rmse_values[name]:.2f}" for name in display_order
+        f"{name}: {rmse_values[name]:.2f}" for name in sorted_names
     )
     plt.text(
         0.98,
@@ -143,7 +158,7 @@ def plot_best_fits() -> None:
     plt.title("Best Model Fits vs Experimental Data")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join("plots", "best_fits_plot.png"), dpi=300)
+    plt.savefig(os.path.join("plots", "fit_exp.png"), dpi=300)
     plt.close()
 
 
