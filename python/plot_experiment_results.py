@@ -106,6 +106,12 @@ def plot_box_swarm() -> None:
     plt.title("Distribution of Best RMSE Across 13 Runs on AAV Experimental Data")
     plt.xticks(rotation=45)
     plt.legend().remove()  # Remove legend since colors match x-axis
+
+    # Add median values next to each box
+    for i, algo in enumerate(sorted_algorithms):
+        median_val = medians[algo]
+        plt.text(i + 0.15, median_val, f'{median_val:.3f}', ha='left', va='center', fontsize=10, color='black')
+
     plt.tight_layout()
     plt.savefig(os.path.join("plots", "rmse_exp.png"), dpi=300)
     plt.close()
