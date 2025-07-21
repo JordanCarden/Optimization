@@ -105,7 +105,15 @@ def plot_box_swarm() -> None:
     plt.legend().remove()
     for i, algo in enumerate(sorted_algorithms):
         median_val = medians[algo]
-        plt.text(i + 0.15, median_val, f"{median_val:.3f}", ha="left", va="center", fontsize=10, color="black")
+        plt.text(
+            i + 0.15,
+            median_val,
+            f"{median_val:.3f}",
+            ha="left",
+            va="center",
+            fontsize=10,
+            color="black",
+        )
     plt.tight_layout()
     plt.savefig(os.path.join("plots", "rmse_exp.png"), dpi=300)
     plt.close()
@@ -121,7 +129,11 @@ def plot_best_fits() -> None:
 
     for algo in ALGORITHMS:
         params = _load_parameters(f"{algo}_best_params.csv")
-        sim = simulate_variant_response(params=params, model_params=MODEL_PARAMS, variant=VARIANT)
+        sim = simulate_variant_response(
+            params=params,
+            model_params=MODEL_PARAMS,
+            variant=VARIANT,
+        )
         display_name = DISPLAY_NAMES[algo]
         rmse = float(np.sqrt(np.mean((exp_trace - sim) ** 2)))
         rmse_values[display_name] = rmse
@@ -250,7 +262,7 @@ def plot_parameter_recovery() -> None:
     """Create a six-panel swarm plot figure of parameter recovery."""
     df, categories = _get_mase_df()
     overall_medians = df.groupby("optimizer")["mase"].median().sort_values()
-    sorted_optimizers = overall_medians.index.tolist()
+    overall_sorted = overall_medians.index.tolist()
 
     fig, axes = plt.subplots(2, 3, figsize=(20, 12), sharey=True)
     ax_list = axes.flatten()
@@ -260,7 +272,7 @@ def plot_parameter_recovery() -> None:
         data=df,
         x="optimizer",
         y="mase",
-        order=sorted_optimizers,
+        order=overall_sorted,
         color="lightgray",
         width=0.3,
         fliersize=0,
@@ -272,28 +284,39 @@ def plot_parameter_recovery() -> None:
         y="mase",
         hue="optimizer",
         palette=COLOR_MAP,
-        order=sorted_optimizers,
+        order=overall_sorted,
         size=5,
     )
     ax_list[0].set_title("Overall Parameter Recovery (MASE)")
     ax_list[0].set_xlabel("Optimizer")
     ax_list[0].set_ylabel("MASE")
-    ax_list[0].set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in sorted_optimizers])
+    ax_list[0].set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in overall_sorted])
     ax_list[0].legend().remove()
-    for i, opt in enumerate(sorted_optimizers):
+    for i, opt in enumerate(overall_sorted):
         median_val = overall_medians[opt]
-        ax_list[0].text(i + 0.15, median_val, f"{median_val:.3f}", ha="left", va="center", fontsize=10, color="black")
+        ax_list[0].text(
+            i + 0.15,
+            median_val,
+            f"{median_val:.3f}",
+            ha="left",
+            va="center",
+            fontsize=10,
+            color="black",
+        )
 
     for ax_idx, category in enumerate(categories, start=1):
         ax = ax_list[ax_idx]
         subset = df[df["category"] == category]
-        subset_medians = subset.groupby("optimizer")["mase"].median()
+        subset_medians = (
+            subset.groupby("optimizer")["mase"].median().sort_values()
+        )
+        subset_sorted = subset_medians.index.tolist()
         sns.boxplot(
             ax=ax,
             data=subset,
             x="optimizer",
             y="mase",
-            order=sorted_optimizers,
+            order=subset_sorted,
             color="lightgray",
             width=0.3,
             fliersize=0,
@@ -305,18 +328,26 @@ def plot_parameter_recovery() -> None:
             y="mase",
             hue="optimizer",
             palette=COLOR_MAP,
-            order=sorted_optimizers,
+            order=subset_sorted,
             size=5,
         )
         ax.set_title(DISPLAY_NAMES.get(category, category.replace("_", " ").title()))
         ax.set_xlabel("Optimizer")
         ax.set_ylabel("MASE")
-        ax.set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in sorted_optimizers])
+        ax.set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in subset_sorted])
         ax.legend().remove()
-        for i, opt in enumerate(sorted_optimizers):
+        for i, opt in enumerate(subset_sorted):
             median_val = subset_medians.get(opt, np.nan)
             if not np.isnan(median_val):
-                ax.text(i + 0.15, median_val, f"{median_val:.3f}", ha="left", va="center", fontsize=10, color="black")
+                ax.text(
+                    i + 0.15,
+                    median_val,
+                    f"{median_val:.3f}",
+                    ha="left",
+                    va="center",
+                    fontsize=10,
+                    color="black",
+                )
 
     for ax in ax_list:
         ax.tick_params(axis="x", rotation=45)
@@ -363,7 +394,15 @@ def plot_parameter_recovery_excluding_own() -> None:
     ax.tick_params(axis="x", rotation=45)
     for i, opt in enumerate(sorted_optimizers):
         median_val = medians[opt]
-        ax.text(i + 0.15, median_val, f"{median_val:.3f}", ha="left", va="center", fontsize=10, color="black")
+        ax.text(
+            i + 0.15,
+            median_val,
+            f"{median_val:.3f}",
+            ha="left",
+            va="center",
+            fontsize=10,
+            color="black",
+        )
 
     plt.tight_layout()
     plt.savefig("plots/param_recovery_exclusion.png", dpi=300)
@@ -390,7 +429,7 @@ def plot_synthetic_swarm() -> None:
 
     categories = sorted(df["category"].unique())
     overall_medians = df.groupby("optimizer")["rmse"].median().sort_values()
-    sorted_optimizers = overall_medians.index.tolist()
+    overall_sorted = overall_medians.index.tolist()
 
     fig, axes = plt.subplots(2, 3, figsize=(20, 12), sharey=True)
     ax_list = axes.flatten()
@@ -400,7 +439,7 @@ def plot_synthetic_swarm() -> None:
         data=df,
         x="optimizer",
         y="rmse",
-        order=sorted_optimizers,
+        order=overall_sorted,
         color="lightgray",
         width=0.3,
         fliersize=0,
@@ -412,28 +451,39 @@ def plot_synthetic_swarm() -> None:
         y="rmse",
         hue="optimizer",
         palette=COLOR_MAP,
-        order=sorted_optimizers,
+        order=overall_sorted,
         size=5,
     )
     ax_list[0].set_title("Overall Optimizer Performance")
     ax_list[0].set_xlabel("Optimizer")
     ax_list[0].set_ylabel("RMSE")
-    ax_list[0].set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in sorted_optimizers])
+    ax_list[0].set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in overall_sorted])
     ax_list[0].legend().remove()
-    for i, opt in enumerate(sorted_optimizers):
+    for i, opt in enumerate(overall_sorted):
         median_val = overall_medians[opt]
-        ax_list[0].text(i + 0.15, median_val, f"{median_val:.3f}", ha="left", va="center", fontsize=10, color="black")
+        ax_list[0].text(
+            i + 0.15,
+            median_val,
+            f"{median_val:.3f}",
+            ha="left",
+            va="center",
+            fontsize=10,
+            color="black",
+        )
 
     for ax_idx, category in enumerate(categories, start=1):
         ax = ax_list[ax_idx]
         subset = df[df["category"] == category]
-        subset_medians = subset.groupby("optimizer")["rmse"].median()
+        subset_medians = (
+            subset.groupby("optimizer")["rmse"].median().sort_values()
+        )
+        subset_sorted = subset_medians.index.tolist()
         sns.boxplot(
             ax=ax,
             data=subset,
             x="optimizer",
             y="rmse",
-            order=sorted_optimizers,
+            order=subset_sorted,
             color="lightgray",
             width=0.3,
             fliersize=0,
@@ -445,18 +495,26 @@ def plot_synthetic_swarm() -> None:
             y="rmse",
             hue="optimizer",
             palette=COLOR_MAP,
-            order=sorted_optimizers,
+            order=subset_sorted,
             size=5,
         )
         ax.set_title(DISPLAY_NAMES.get(category, category.replace("_", " ").title()))
         ax.set_xlabel("Optimizer")
         ax.set_ylabel("RMSE")
-        ax.set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in sorted_optimizers])
+        ax.set_xticklabels([DISPLAY_NAMES.get(opt, opt) for opt in subset_sorted])
         ax.legend().remove()
-        for i, opt in enumerate(sorted_optimizers):
+        for i, opt in enumerate(subset_sorted):
             median_val = subset_medians.get(opt, np.nan)
             if not np.isnan(median_val):
-                ax.text(i + 0.15, median_val, f"{median_val:.3f}", ha="left", va="center", fontsize=10, color="black")
+                ax.text(
+                    i + 0.15,
+                    median_val,
+                    f"{median_val:.3f}",
+                    ha="left",
+                    va="center",
+                    fontsize=10,
+                    color="black",
+                )
 
     for ax in ax_list:
         ax.tick_params(axis="x", rotation=45)
