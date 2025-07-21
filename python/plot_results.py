@@ -354,7 +354,7 @@ def plot_parameter_recovery() -> None:
 
     plt.tight_layout()
     plt.savefig("plots/param_recovery.png", dpi=300)
-    plt.show()
+    plt.close()
 
 
 def plot_parameter_recovery_excluding_own() -> None:
@@ -406,7 +406,7 @@ def plot_parameter_recovery_excluding_own() -> None:
 
     plt.tight_layout()
     plt.savefig("plots/param_recovery_exclusion.png", dpi=300)
-    plt.show()
+    plt.close()
 
 
 # ---------------------------------------------------------------------------
@@ -521,7 +521,7 @@ def plot_synthetic_swarm() -> None:
 
     plt.tight_layout()
     plt.savefig("plots/rmse_syn.png")
-    plt.show()
+    plt.close()
 
 
 if __name__ == "__main__":
