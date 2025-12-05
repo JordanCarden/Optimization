@@ -20,4 +20,3 @@ Thumbs.db
 # Project specific
 !plots/.gitkeep
 synthetic_results/
-experimental_results/
